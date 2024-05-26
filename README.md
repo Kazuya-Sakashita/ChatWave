@@ -78,12 +78,12 @@ docker-compose build
 docker-compose up
 ```
 
-3. **データベースのセットアップ:**
+4. **データベースのセットアップ:**
 
 ```bash
 docker-compose run backend rails db:create db:migrate
 ```
 
-3. **アプリケーションへのアクセス:**
+5. **アプリケーションへのアクセス:**
 
 - Rails は localhost:3000、React は localhost:8000 でアクセスできます
