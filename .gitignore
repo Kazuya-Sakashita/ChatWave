@@ -1,0 +1,63 @@
+# バージョン管理に含めないファイル/ディレクトリの設定
+
+## Rails関連
+# Ignore bundler config
+/backend/.bundle
+
+# Ignore all logfiles and tempfiles
+/backend/log/*
+/backend/tmp
+!/backend/log/.keep
+!/backend/tmp/.keep
+
+# Ignore pid files, preserving .keep
+/backend/tmp/pids
+!/backend/tmp/pids/.keep
+
+# Ignore uploaded files in development
+/backend/storage/*
+!/backend/storage/.keep
+
+# Ignore master key for decrypting credentials and more
+/backend/config/master.key
+
+## Node関連（フロントエンド）
+/frontend/node_modules
+/frontend/.pnp
+/frontend/.pnp.js
+
+## testing
+/frontend/coverage
+
+## production
+/frontend/build
+
+# misc
+/frontend/.env.local
+/frontend/.env.development.local
+/frontend/.env.test.local
+/frontend/.env.production.local
+
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/yarn-error.log*
+
+## Docker関連
+/docker/tmp
+
+## 環境設定ファイル
+/.env
+
+## System files
+.DS_Store
+Thumbs.db
+
+## IDE/Editor specific
+.vscode/
+.idea/
+*.swp
+*~
+
+# Temporary files and directories
+/tmp/
+/tmp/db/
