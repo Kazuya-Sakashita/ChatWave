@@ -55,3 +55,35 @@ ChatWave は、リアルタイムチャット、ユーザー認証、ユーザ�
    git clone git@github.com:Kazuya-Sakashita/ChatWave.git
    cd ChatWave
    ```
+
+2. **環境変数の設定:**
+
+```plaintext
+# データベース接続情報
+POSTGRES_USER=******
+POSTGRES_PASSWORD=*****
+POSTGRES_DB=chatwave
+POSTGRES_HOST=db
+POSTGRES_PORT=5432
+
+# アプリケーション設定
+RAILS_ENV=development
+REACT_APP_API_URL=http://localhost:3000
+```
+
+3. **Docker コンテナのビルドと起動:**
+
+```bash
+docker-compose build
+docker-compose up
+```
+
+3. **データベースのセットアップ:**
+
+```bash
+docker-compose run backend rails db:create db:migrate
+```
+
+3. **アプリケーションへのアクセス:**
+
+- Rails は localhost:3000、React は localhost:8000 でアクセスできます
