@@ -39,3 +39,6 @@ Thumbs.db
 .idea/
 *.swp
 *~
+
+# Temporary files and directories
+/tmp/
