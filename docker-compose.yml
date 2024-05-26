@@ -1,3 +1,5 @@
+version: "3.8"
+
 services:
   db:
     image: postgres:16.3
@@ -23,11 +25,11 @@ services:
       - ./.env
   front:
     build:
-      context: ./frontend/
+      context: ./frontend
       dockerfile: Dockerfile
     volumes:
-      - ./frontend:/frontend
-    command: sh -c "cd app &&PORT=8000 yarn start"
+      - ./frontend/app:/frontend/app
+    command: sh -c "cd /frontend/app && PORT=8000 yarn start"
     ports:
       - "8000:8000"
     env_file:
