@@ -50,3 +50,7 @@ end
 # Enable Cross-Origin Resource Sharing with rack-cors
 # This gem is used to handle cross-origin AJAX requests.
 gem 'rack-cors'
+
+gem 'devise'
+gem 'devise-jwt'
+gem 'jsonapi-serializer'
