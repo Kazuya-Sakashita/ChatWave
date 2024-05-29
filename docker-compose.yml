@@ -34,3 +34,9 @@ services:
       - "8000:8000"
     env_file:
       - ./.env
+  smtp:
+    image: schickling/mailcatcher
+    container_name: mailcatcher
+    ports:
+      - "1080:1080"
+      - "1025:1025"
