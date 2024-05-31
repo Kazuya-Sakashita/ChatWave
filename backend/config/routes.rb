@@ -7,8 +7,10 @@ Rails.application.routes.draw do
   controllers: {
     sessions: 'users/sessions',
     registrations: 'users/registrations',
-    confirmations: 'users/confirmations'
+    confirmations: 'users/confirmations',
+    passwords: 'users/passwords'
   }
+
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Defines the root path route ("/")
