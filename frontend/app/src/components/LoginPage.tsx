@@ -1,7 +1,8 @@
 import React, { useState } from "react";
-import axios from "../api/axiosConfig";
-import styles from "./LoginPage.module.css";
+import axios from "../api/axiosConfig"; // 相対パスを使用してaxiosConfigをインポート
 import { useNavigate } from "react-router-dom";
+import styles from "./LoginPage.module.css";
+import { isAxiosError } from "axios"; // axiosからisAxiosErrorをインポート
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -13,24 +14,21 @@ const LoginPage: React.FC = () => {
     event.preventDefault();
     setError("");
 
-    // 送信するデータをコンソールに出力
-    console.log("Sending data:", { user: { email, password } });
-
     try {
       const response = await axios.post("/login", {
-        user: { email, password },
+        user: { email, password }, // 正しい形式でデータを送信
       });
-      // レスポンスをコンソールに出力
-      console.log("Response data:", response.data);
-
-      localStorage.setItem("token", response.data.token);
-      alert("User logged in successfully");
+      const token = response.data.token;
+      localStorage.setItem("token", token); // トークンを保存
+      alert("Logged in successfully");
       navigate("/");
-    } catch (err) {
-      // エラーをコンソールに出力
-      console.error("Failed to login:", err);
-
-      setError("Failed to login");
+    } catch (err: unknown) {
+      // 'unknown'型のエラーをキャッチ
+      if (isAxiosError(err) && err.response) {
+        setError(`Failed to login: ${err.response.data.error}`);
+      } else {
+        setError("Failed to login");
+      }
     }
   };
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "../api/axiosConfig";
+import axios from "../api/axiosConfig"; // 相対パスを使用してaxiosConfigをインポート
 import styles from "./Header.module.css";
+import { isAxiosError } from "axios"; // axiosからisAxiosErrorをインポート
 
 const Header: React.FC = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(
@@ -11,20 +12,23 @@ const Header: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      const token = localStorage.getItem("token");
-      const config = {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      };
+      // DELETEリクエストを送信してログアウト処理を行う
+      await axios.delete("/logout");
 
-      await axios.delete("/logout", config);
+      // トークンを削除して認証状態を更新
       localStorage.removeItem("token");
       setIsAuthenticated(false);
       alert("Logged out successfully");
       navigate("/login");
-    } catch (err) {
-      console.error("Failed to logout:", err);
+    } catch (error) {
+      console.error("Failed to logout:", error);
+
+      // AxiosErrorかどうかをチェック
+      if (isAxiosError(error)) {
+        console.error("Response error:", error.response?.data);
+      } else {
+        console.error("Unexpected error:", error);
+      }
     }
   };
 

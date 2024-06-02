@@ -5,7 +5,13 @@ class Users::SessionsController < Devise::SessionsController
   respond_to :json
 
   def create
-    super
+    user = User.find_by(email: params[:user][:email])
+    if user && user.valid_password?(params[:user][:password])
+      sign_in(user)
+      respond_with(user)
+    else
+      render json: { error: 'Invalid Email or Password' }, status: :unauthorized
+    end
   end
 
   def destroy
@@ -18,12 +24,12 @@ class Users::SessionsController < Devise::SessionsController
 
   private
 
-  def respond_with(current_user, _opts = {})
+  def respond_with(resource, _opts = {})
     render json: {
       status: {
         code: 200,
         message: 'Logged in successfully.',
-        data: { user: UserSerializer.new(current_user).serializable_hash[:data][:attributes] }
+        data: { user: UserSerializer.new(resource).serializable_hash[:data][:attributes] }
       }
     }, status: :ok
   end
@@ -50,6 +56,11 @@ class Users::SessionsController < Devise::SessionsController
           status: 401,
           message: "Invalid token: #{e.message}"
         }, status: :unauthorized
+      rescue StandardError => e
+        render json: {
+          status: 500,
+          message: "Internal server error: #{e.message}"
+        }, status: :internal_server_error
       end
     else
       render json: {

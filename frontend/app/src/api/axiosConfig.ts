@@ -1,12 +1,19 @@
 import axios from "axios";
 
-const token = localStorage.getItem("token");
-
 const instance = axios.create({
-  baseURL: "http://localhost:3000",
+  baseURL: process.env.REACT_APP_API_BASE_URL || "http://localhost:3000", // 環境変数を使用
   headers: {
-    Authorization: token ? `Bearer ${token}` : "",
+    "Content-Type": "application/json",
   },
+});
+
+// リクエストインターセプターを設定して、各リクエストにトークンを追加
+instance.interceptors.request.use((config) => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default instance;
