@@ -1,25 +1,35 @@
 import React, { useState } from "react";
 import axios from "../api/axiosConfig";
 import styles from "./LoginPage.module.css";
+import { useNavigate } from "react-router-dom";
 
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setError("");
 
+    // 送信するデータをコンソールに出力
+    console.log("Sending data:", { user: { email, password } });
+
     try {
-      await axios.post("/login", {
-        user: {
-          email,
-          password,
-        },
+      const response = await axios.post("/login", {
+        user: { email, password },
       });
+      // レスポンスをコンソールに出力
+      console.log("Response data:", response.data);
+
+      localStorage.setItem("token", response.data.token);
       alert("User logged in successfully");
+      navigate("/");
     } catch (err) {
+      // エラーをコンソールに出力
+      console.error("Failed to login:", err);
+
       setError("Failed to login");
     }
   };
