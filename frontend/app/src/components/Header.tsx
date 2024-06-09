@@ -1,13 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "../api/axiosConfig"; // 相対パスを使用してaxiosConfigをインポート
+import axios from "../api/axiosConfig";
 import styles from "./Header.module.css";
-import { isAxiosError } from "axios"; // axiosからisAxiosErrorをインポート
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../store";
+import { logout, AuthActionTypes } from "../actions/authActions";
+import { isAxiosError } from "axios";
+import { ThunkDispatch } from "redux-thunk";
 
 const Header: React.FC = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(
-    !!localStorage.getItem("token")
+  const isAuthenticated = useSelector(
+    (state: RootState) => state.auth.isAuthenticated
   );
+  const dispatch: ThunkDispatch<RootState, void, AuthActionTypes> =
+    useDispatch();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
@@ -16,8 +22,7 @@ const Header: React.FC = () => {
       await axios.delete("/logout");
 
       // トークンを削除して認証状態を更新
-      localStorage.removeItem("token");
-      setIsAuthenticated(false);
+      dispatch(logout());
       alert("Logged out successfully");
       navigate("/login");
     } catch (error) {
@@ -34,8 +39,13 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    setIsAuthenticated(!!token);
-  }, []);
+    if (token) {
+      dispatch({
+        type: "LOGIN_SUCCESS",
+        payload: token,
+      });
+    }
+  }, [dispatch]);
 
   return (
     <header className={styles.header}>
