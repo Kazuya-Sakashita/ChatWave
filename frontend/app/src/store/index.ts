@@ -1,21 +1,13 @@
-import { createStore, applyMiddleware, combineReducers } from "redux";
-import { composeWithDevTools } from "redux-devtools-extension";
-import thunk, { ThunkMiddleware } from "redux-thunk";
-import authReducer from "../reducers/authReducer";
-import { AnyAction } from "redux";
+import { configureStore } from "@reduxjs/toolkit";
+import authReducer from "./authSlice";
 
-const rootReducer = combineReducers({
-  auth: authReducer,
-  // 他のリデューサーがあればここに追加
+const store = configureStore({
+  reducer: {
+    auth: authReducer,
+  },
 });
 
-export type RootState = ReturnType<typeof rootReducer>;
-
-const store = createStore(
-  rootReducer,
-  composeWithDevTools(
-    applyMiddleware(thunk as ThunkMiddleware<RootState, AnyAction>)
-  )
-);
+export type RootState = ReturnType<typeof store.getState>;
+export type AppDispatch = typeof store.dispatch;
 
 export default store;

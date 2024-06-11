@@ -3,32 +3,34 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
 import styles from "./Header.module.css";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../store";
-import { logout, AuthActionTypes } from "../actions/authActions";
+import { RootState, AppDispatch } from "../store";
+import { performLogout, login } from "../store/authSlice";
 import { isAxiosError } from "axios";
-import { ThunkDispatch } from "redux-thunk";
 
 const Header: React.FC = () => {
   const isAuthenticated = useSelector(
     (state: RootState) => state.auth.isAuthenticated
   );
-  const dispatch: ThunkDispatch<RootState, void, AuthActionTypes> =
-    useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const dispatch = useDispatch<AppDispatch>();
   const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
-      // DELETEリクエストを送信してログアウト処理を行う
-      await axios.delete("/logout");
-
-      // トークンを削除して認証状態を更新
-      dispatch(logout());
-      alert("Logged out successfully");
-      navigate("/login");
-    } catch (error) {
+      const resultAction = await dispatch(performLogout());
+      if (performLogout.fulfilled.match(resultAction)) {
+        alert("Logged out successfully");
+        navigate("/login");
+      } else {
+        if (resultAction.payload) {
+          console.error("Failed to logout:", resultAction.payload);
+        } else {
+          console.error("Failed to logout with unknown error");
+        }
+      }
+    } catch (error: unknown) {
       console.error("Failed to logout:", error);
 
-      // AxiosErrorかどうかをチェック
       if (isAxiosError(error)) {
         console.error("Response error:", error.response?.data);
       } else {
@@ -40,10 +42,14 @@ const Header: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (token) {
-      dispatch({
-        type: "LOGIN_SUCCESS",
-        payload: token,
-      });
+      axios
+        .get("/me", { headers: { Authorization: `Bearer ${token}` } })
+        .then((response) => {
+          dispatch(login({ token, user: response.data.user }));
+        })
+        .catch((error) => {
+          console.error("Failed to fetch user info:", error);
+        });
     }
   }, [dispatch]);
 
@@ -53,9 +59,12 @@ const Header: React.FC = () => {
       <nav>
         <ul>
           {isAuthenticated ? (
-            <li>
-              <button onClick={handleLogout}>Logout</button>
-            </li>
+            <>
+              <li>Welcome, {user?.email}</li>
+              <li>
+                <button onClick={handleLogout}>Logout</button>
+              </li>
+            </>
           ) : (
             <>
               <li>

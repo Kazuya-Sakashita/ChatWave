@@ -8,7 +8,8 @@ class Users::SessionsController < Devise::SessionsController
     user = User.find_by(email: params[:user][:email])
     if user && user.valid_password?(params[:user][:password])
       sign_in(user)
-      respond_with(user)
+      token = current_token
+      respond_with(user, token)
     else
       render json: { error: 'Invalid Email or Password' }, status: :unauthorized
     end
@@ -24,12 +25,15 @@ class Users::SessionsController < Devise::SessionsController
 
   private
 
-  def respond_with(resource, _opts = {})
+  def respond_with(resource, token)
     render json: {
       status: {
         code: 200,
         message: 'Logged in successfully.',
-        data: { user: UserSerializer.new(resource).serializable_hash[:data][:attributes] }
+        data: {
+          user: UserSerializer.new(resource).serializable_hash[:data][:attributes],
+          token: token
+        }
       }
     }, status: :ok
   end
@@ -68,5 +72,9 @@ class Users::SessionsController < Devise::SessionsController
         message: "Authorization header missing."
       }, status: :unauthorized
     end
+  end
+
+  def current_token
+    request.env['warden-jwt_auth.token']
   end
 end
