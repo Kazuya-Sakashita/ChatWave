@@ -4,7 +4,7 @@ import axios from "../api/axiosConfig";
 import styles from "./Header.module.css";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState, AppDispatch } from "../store";
-import { performLogout, login } from "../store/authSlice";
+import { performLogout, loginSuccess } from "../store/authSlice";
 import { isAxiosError } from "axios";
 
 const Header: React.FC = () => {
@@ -45,7 +45,7 @@ const Header: React.FC = () => {
       axios
         .get("/me", { headers: { Authorization: `Bearer ${token}` } })
         .then((response) => {
-          dispatch(login({ token, user: response.data.user }));
+          dispatch(loginSuccess({ token, user: response.data.user }));
         })
         .catch((error) => {
           console.error("Failed to fetch user info:", error);
