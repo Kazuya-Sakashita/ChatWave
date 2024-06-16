@@ -6,6 +6,7 @@ import SignupPage from "./components/SignupPage";
 import LoginPage from "./components/LoginPage";
 import Header from "./components/Header";
 import HomePage from "./components/HomePage";
+import RequireAuth from "./components/RequireAuth";
 
 const App: React.FC = () => {
   return (
@@ -13,7 +14,14 @@ const App: React.FC = () => {
       <Router>
         <Header />
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route
+            path="/"
+            element={
+              <RequireAuth>
+                <HomePage />
+              </RequireAuth>
+            }
+          />
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           {/* 他のルート */}

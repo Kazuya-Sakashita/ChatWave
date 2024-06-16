@@ -1,27 +1,31 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { Link, useNavigate } from "react-router-dom";
-import axios from "../api/axiosConfig";
 import styles from "./Header.module.css";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState, AppDispatch } from "../store";
-import { performLogout, loginSuccess } from "../store/authSlice";
-import { isAxiosError } from "axios";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store";
+import { performLogout } from "../store/authSlice";
+import useAuth from "../hooks/useAuth";
 
+// Headerコンポーネントを定義
 const Header: React.FC = () => {
-  const isAuthenticated = useSelector(
-    (state: RootState) => state.auth.isAuthenticated
-  );
-  const user = useSelector((state: RootState) => state.auth.user);
+  // useAuthフックを使用して認証状態とユーザー情報を取得
+  const { isAuthenticated, user } = useAuth();
+  // Reduxのdispatch関数を取得
   const dispatch = useDispatch<AppDispatch>();
+  // React Routerのnavigate関数を取得
   const navigate = useNavigate();
 
+  // ログアウトハンドラーを定義
   const handleLogout = async () => {
     try {
+      // performLogoutアクションをディスパッチし、結果を取得
       const resultAction = await dispatch(performLogout());
       if (performLogout.fulfilled.match(resultAction)) {
+        // ログアウト成功時の処理
         alert("Logged out successfully");
         navigate("/login");
       } else {
+        // ログアウト失敗時のエラーメッセージをログに出力
         if (resultAction.payload) {
           console.error("Failed to logout:", resultAction.payload);
         } else {
@@ -29,29 +33,10 @@ const Header: React.FC = () => {
         }
       }
     } catch (error: unknown) {
+      // 予期しないエラー発生時のエラーメッセージをログに出力
       console.error("Failed to logout:", error);
-
-      if (isAxiosError(error)) {
-        console.error("Response error:", error.response?.data);
-      } else {
-        console.error("Unexpected error:", error);
-      }
     }
   };
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      axios
-        .get("/me", { headers: { Authorization: `Bearer ${token}` } })
-        .then((response) => {
-          dispatch(loginSuccess({ token, user: response.data.user }));
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user info:", error);
-        });
-    }
-  }, [dispatch]);
 
   return (
     <header className={styles.header}>
@@ -60,6 +45,7 @@ const Header: React.FC = () => {
         <ul>
           {isAuthenticated ? (
             <>
+              {/* 認証済みユーザーへのナビゲーション */}
               <li>Welcome, {user?.email}</li>
               <li>
                 <button onClick={handleLogout}>Logout</button>
@@ -67,6 +53,7 @@ const Header: React.FC = () => {
             </>
           ) : (
             <>
+              {/* 非認証ユーザーへのナビゲーション */}
               <li>
                 <Link to="/login">Login</Link>
               </li>
