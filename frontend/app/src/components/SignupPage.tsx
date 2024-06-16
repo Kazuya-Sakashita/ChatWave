@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import axios from "../api/axiosConfig";
+import { useNavigate } from "react-router-dom";
 import styles from "./SignupPage.module.css";
 import { SignupPageState } from "../types/componentTypes";
 
@@ -10,6 +11,7 @@ const SignupPage: React.FC = () => {
   const [passwordConfirmation, setPasswordConfirmation] =
     useState<SignupPageState["passwordConfirmation"]>("");
   const [error, setError] = useState<SignupPageState["error"]>("");
+  const navigate = useNavigate();
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -29,7 +31,7 @@ const SignupPage: React.FC = () => {
           password_confirmation: passwordConfirmation,
         },
       });
-      alert("User registered successfully");
+      navigate("/confirmation"); // サインアップ後にメール確認画面にリダイレクト
     } catch (err) {
       setError("Failed to register");
     }
