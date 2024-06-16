@@ -1,10 +1,7 @@
 // ReactとFC（Functional Component）をインポート
 import React from "react";
-
-// ErrorMessageコンポーネントのプロパティの型を定義（stringまたはnull）
-interface ErrorMessageProps {
-  message: string | null;
-}
+// ErrorMessageコンポーネントのプロパティの型をインポート
+import { ErrorMessageProps } from "../types/componentTypes";
 
 // ErrorMessageコンポーネントを定義
 const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {

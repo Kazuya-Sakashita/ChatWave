@@ -1,18 +1,10 @@
 import { createSlice, PayloadAction, createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "../api/axiosConfig";
 import { RootState } from "./index";
+import { authInitialState } from "../components/commonInitialState";
+import { LogoutResponse } from "../types/componentTypes"; // LogoutResponse型をインポート
 
-interface AuthState {
-  isAuthenticated: boolean;
-  token: string | null;
-  user: any;
-}
-
-const initialState: AuthState = {
-  isAuthenticated: false,
-  token: null,
-  user: null,
-};
+const initialState = authInitialState;
 
 // 非同期ログインアクション
 export const performLogin = createAsyncThunk(
@@ -35,7 +27,7 @@ export const performLogin = createAsyncThunk(
 );
 
 // 非同期ログアウトアクション
-export const performLogout = createAsyncThunk(
+export const performLogout = createAsyncThunk<LogoutResponse, void>(
   "auth/logout",
   async (_, thunkAPI) => {
     try {

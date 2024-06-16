@@ -6,13 +6,14 @@ import { performLogin } from "../store/authSlice";
 import { AppDispatch } from "../store";
 import ErrorMessage from "../components/ErrorMessage";
 import { getErrorMessage } from "../utils/errorUtils";
+import { LoginPageState } from "../types/componentTypes";
 
 // LoginPageコンポーネントを定義
 const LoginPage: React.FC = () => {
   // ローカルステートを定義
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [email, setEmail] = useState<LoginPageState["email"]>("");
+  const [password, setPassword] = useState<LoginPageState["password"]>("");
+  const [error, setError] = useState<LoginPageState["error"]>(null);
 
   // フックを使用してナビゲートとディスパッチを設定
   const navigate = useNavigate();

@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import axios from "../api/axiosConfig";
 import styles from "./SignupPage.module.css";
+import { SignupPageState } from "../types/componentTypes";
 
 const SignupPage: React.FC = () => {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [passwordConfirmation, setPasswordConfirmation] = useState("");
-  const [error, setError] = useState("");
+  const [name, setName] = useState<SignupPageState["name"]>("");
+  const [email, setEmail] = useState<SignupPageState["email"]>("");
+  const [password, setPassword] = useState<SignupPageState["password"]>("");
+  const [passwordConfirmation, setPasswordConfirmation] =
+    useState<SignupPageState["passwordConfirmation"]>("");
+  const [error, setError] = useState<SignupPageState["error"]>("");
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
