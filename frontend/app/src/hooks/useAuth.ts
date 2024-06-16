@@ -30,7 +30,7 @@ const useAuth = () => {
         .get("/me", { headers: { Authorization: `Bearer ${token}` } })
         .then((response) => {
           // ユーザー情報の取得に成功した場合、Reduxストアにログイン情報を保存
-          dispatch(loginSuccess({ token, user: response.data.user }));
+          dispatch(loginSuccess({ token, user: response.data }));
         })
         .catch((error) => {
           // エラーが発生した場合、エラーメッセージをログに出力し、ログアウト処理を実行
