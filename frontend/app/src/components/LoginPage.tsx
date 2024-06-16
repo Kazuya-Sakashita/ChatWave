@@ -4,39 +4,53 @@ import { useNavigate } from "react-router-dom";
 import styles from "./LoginPage.module.css";
 import { performLogin } from "../store/authSlice";
 import { AppDispatch } from "../store";
+import ErrorMessage from "../components/ErrorMessage";
+import { getErrorMessage } from "../utils/errorUtils";
 
+// LoginPageコンポーネントを定義
 const LoginPage: React.FC = () => {
+  // ローカルステートを定義
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [error, setError] = useState<string | null>(null);
+
+  // フックを使用してナビゲートとディスパッチを設定
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
 
+  // フォームの送信ハンドラーを定義
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError("");
+    setError(null);
 
     try {
+      // performLoginアクションをディスパッチし、結果を取得
       const resultAction = await dispatch(performLogin({ email, password }));
       if (performLogin.fulfilled.match(resultAction)) {
+        // ログイン成功時の処理
         alert("Logged in successfully");
         navigate("/");
       } else {
-        if (resultAction.payload) {
-          setError(`Failed to login: ${resultAction.payload}`);
-        } else {
-          setError("Failed to login");
-        }
+        // ログイン失敗時のエラーメッセージを取得して設定
+        const errorMessage = getErrorMessage(
+          resultAction.payload,
+          "Failed to login"
+        );
+        setError(errorMessage);
       }
-    } catch (err) {
-      setError("Failed to login");
+    } catch (err: any) {
+      // 予期しないエラー発生時のエラーメッセージを取得して設定
+      const errorMessage = getErrorMessage(err, "Failed to login");
+      setError(errorMessage);
     }
   };
 
   return (
     <div className={styles["form-container"]}>
       <h1>Login</h1>
-      {error && <p style={{ color: "red" }}>{error}</p>}
+      {/* エラーメッセージを表示 */}
+      <ErrorMessage message={error} />
+      {/* ログインフォームをレンダリング */}
       <form onSubmit={handleSubmit}>
         <div>
           <label>Email:</label>
