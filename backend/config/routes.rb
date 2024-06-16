@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  root "home#index"
   devise_for :users, path: '', path_names: {
     sign_in: 'login',
     sign_out: 'logout',
@@ -10,6 +11,8 @@ Rails.application.routes.draw do
     confirmations: 'users/confirmations',
     passwords: 'users/passwords'
   }
+
+  get '/me', to: 'users#show'
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
