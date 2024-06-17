@@ -8,6 +8,8 @@ import Header from "./components/Header";
 import HomePage from "./components/HomePage";
 import RequireAuth from "./components/RequireAuth";
 import EmailConfirmationPage from "./components/EmailConfirmationPage";
+import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
+import PasswordResetPage from "./components/PasswordResetPage";
 
 const App: React.FC = () => {
   return (
@@ -26,6 +28,14 @@ const App: React.FC = () => {
           <Route path="/signup" element={<SignupPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/confirmation" element={<EmailConfirmationPage />} />
+          <Route
+            path="/password/reset"
+            element={<PasswordResetRequestPage />}
+          />
+          <Route
+            path="/password/edit/:reset_password_token"
+            element={<PasswordResetPage />}
+          />
           {/* 他のルート */}
         </Routes>
       </Router>

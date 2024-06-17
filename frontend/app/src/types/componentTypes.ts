@@ -23,3 +23,18 @@ export interface SignupPageState {
 export interface LogoutResponse {
   // 必要に応じてログアウトのレスポンスの型を定義
 }
+
+// PasswordResetRequestPageコンポーネントのローカルステートの型を定義
+export interface PasswordResetRequestPageState {
+  email: string;
+  message: string | null;
+  error: string | null;
+}
+
+// PasswordResetPageコンポーネントのローカルステートの型を定義
+export interface PasswordResetPageState {
+  password: string;
+  passwordConfirmation: string;
+  message: string | null;
+  error: string | null;
+}
