@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import axios from "../api/axiosConfig";
 import ErrorMessage from "../components/ErrorMessage";
 import styles from "./FormStyles.module.css";
-import { PasswordResetPageState } from "../types/componentTypes";
+import { PasswordResetPageState } from "../types/componentTypes"; // PasswordResetPageState型をインポート
 
 const PasswordResetPage: React.FC = () => {
   const { reset_password_token } = useParams<{
@@ -24,24 +24,24 @@ const PasswordResetPage: React.FC = () => {
     setError(null);
 
     if (password !== passwordConfirmation) {
-      setError("Passwords do not match");
+      setError("パスワードのリセットに失敗しました");
       return;
     }
 
-    const requestData = {
-      user: {
-        reset_password_token,
-        password,
-        password_confirmation: passwordConfirmation,
-      },
-    };
-
-    console.log("Sending data:", requestData); // コンソールに送信データを表示
-
     try {
-      await axios.put("/password", requestData);
-      setMessage("パスワードが正常にリセットされました");
-      navigate("/login");
+      await axios.put("/password", {
+        user: {
+          reset_password_token,
+          password,
+          password_confirmation: passwordConfirmation,
+        },
+      });
+      setMessage(
+        "パスワードが正常にリセットされました。ログインページにリダイレクトします..."
+      );
+      setTimeout(() => {
+        navigate("/login");
+      }, 3000); // 3秒後にログインページにリダイレクト
     } catch (err) {
       setError("パスワードのリセットに失敗しました");
       console.error(err);
@@ -52,7 +52,7 @@ const PasswordResetPage: React.FC = () => {
     <div className={styles["form-container"]}>
       <h1>パスワードリセット</h1>
       <ErrorMessage message={error} />
-      {message && <p style={{ color: "green" }}>{message}</p>}
+      {message && <p className={styles["success-message"]}>{message}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>新しいパスワード:</label>

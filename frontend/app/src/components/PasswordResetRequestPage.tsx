@@ -25,8 +25,8 @@ const PasswordResetRequestPage: React.FC = () => {
   return (
     <div className={styles["form-container"]}>
       <h1>パスワードリセットのリクエスト</h1>
-      <ErrorMessage message={error} />
-      {message && <p style={{ color: "green" }}>{message}</p>}
+      {error && <p className={styles["error-message"]}>{error}</p>}
+      {message && <p className={styles["success-message"]}>{message}</p>}
       <form onSubmit={handleSubmit}>
         <div>
           <label>メールアドレス:</label>
@@ -39,6 +39,9 @@ const PasswordResetRequestPage: React.FC = () => {
         </div>
         <button type="submit">リセットリンクを送信</button>
       </form>
+      <div className={styles["reset-link"]}>
+        <a href="/login">ログインページに戻る</a>
+      </div>
     </div>
   );
 };
