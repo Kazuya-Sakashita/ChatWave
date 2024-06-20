@@ -13,7 +13,7 @@ class User < ApplicationRecord
   has_many :group_memberships, class_name: "GroupMember"
   has_many :groups, through: :group_membersh
 
-  validates :username, presence: true, uniqueness: true
+  validates :name, presence: true, uniqueness: true
   validates :email, presence: true, uniqueness: true
   validates :encrypted_password, presence: true
 end
