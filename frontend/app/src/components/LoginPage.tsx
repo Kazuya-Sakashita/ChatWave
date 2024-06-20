@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useDispatch } from "react-redux";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import styles from "./LoginPage.module.css";
 import { performLogin } from "../store/authSlice";
 import { AppDispatch } from "../store";
@@ -73,6 +73,9 @@ const LoginPage: React.FC = () => {
         </div>
         <button type="submit">Login</button>
       </form>
+      <div className={styles["reset-link"]}>
+        <Link to="/password/reset">Forgot your password?</Link>
+      </div>
     </div>
   );
 };
