@@ -16,7 +16,7 @@ Rails.application.routes.draw do
   resources :groups, only: [:show] do
     post 'create_message', on: :member
   end
-  resources :direct_messages, only: [:show]
+  resources :direct_messages, only: [:index, :show, :create]
   get '/me', to: 'users#show'
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

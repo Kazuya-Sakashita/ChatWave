@@ -12,7 +12,6 @@ import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
 import PasswordResetPage from "./components/PasswordResetPage";
 import ChatList from "./components/ChatList";
 import GroupChatDetail from "./components/GroupChatDetail";
-import DirectMessageList from "./components/DirectMessageList";
 import DirectMessageDetail from "./components/DirectMessageDetail";
 
 const App: React.FC = () => {
@@ -60,7 +59,7 @@ const App: React.FC = () => {
             path="/direct_messages"
             element={
               <RequireAuth>
-                <DirectMessageList />
+                <GroupChatDetail />
               </RequireAuth>
             }
           />

@@ -51,6 +51,9 @@ export type DirectMessage = {
   sender_id: number;
   recipient_id: number;
   content: string;
+  sender_name: string; // 送信者の名前
+  recipient_name: string; // 受信者の名前
+  created_at: string; // 作成日時
 };
 
 // Message型を定義
@@ -58,6 +61,6 @@ export type Message = {
   id: number;
   sender_id: number;
   content: string;
-  sender_name: string;
-  created_at: string;
+  sender_name: string; // 送信者の名前
+  created_at: string; // 作成日時
 };
