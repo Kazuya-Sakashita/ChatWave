@@ -38,3 +38,26 @@ export interface PasswordResetPageState {
   message: string | null;
   error: string | null;
 }
+
+// Group型を定義
+export type Group = {
+  id: number;
+  name: string;
+};
+
+// DirectMessage型を定義
+export type DirectMessage = {
+  id: number;
+  sender_id: number;
+  recipient_id: number;
+  content: string;
+};
+
+// Message型を定義
+export type Message = {
+  id: number;
+  sender_id: number;
+  content: string;
+  sender_name: string;
+  created_at: string;
+};

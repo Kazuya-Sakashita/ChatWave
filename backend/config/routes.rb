@@ -12,6 +12,9 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
 
+  resources :chats, only: [:index]
+  resources :groups, only: [:show]
+  resources :direct_messages, only: [:show]
   get '/me', to: 'users#show'
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html

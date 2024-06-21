@@ -1,0 +1,23 @@
+.message {
+  display: flex;
+  margin: 10px;
+}
+
+.message.left {
+  justify-content: flex-start;
+}
+
+.message.right {
+  justify-content: flex-end;
+}
+
+.message .content {
+  max-width: 60%;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f1f0f0;
+}
+
+.message.right .content {
+  background-color: #dcf8c6;
+}

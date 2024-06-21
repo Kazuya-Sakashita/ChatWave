@@ -10,6 +10,10 @@ import RequireAuth from "./components/RequireAuth";
 import EmailConfirmationPage from "./components/EmailConfirmationPage";
 import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
 import PasswordResetPage from "./components/PasswordResetPage";
+import ChatList from "./components/ChatList";
+import GroupChatDetail from "./components/GroupChatDetail";
+import DirectMessageList from "./components/DirectMessageList";
+import DirectMessageDetail from "./components/DirectMessageDetail";
 
 const App: React.FC = () => {
   return (
@@ -36,10 +40,43 @@ const App: React.FC = () => {
             path="/password/edit/:reset_password_token"
             element={<PasswordResetPage />}
           />
+          <Route
+            path="/chats"
+            element={
+              <RequireAuth>
+                <ChatList />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/groups/:groupId"
+            element={
+              <RequireAuth>
+                <GroupChatDetail />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/direct_messages"
+            element={
+              <RequireAuth>
+                <DirectMessageList />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/direct_messages/:messageId"
+            element={
+              <RequireAuth>
+                <DirectMessageDetail />
+              </RequireAuth>
+            }
+          />
           {/* 他のルート */}
         </Routes>
       </Router>
     </Provider>
   );
 };
+
 export default App;

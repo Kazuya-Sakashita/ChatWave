@@ -101,6 +101,8 @@ GEM
       zeitwerk (~> 2.6)
     erubi (1.12.0)
     eventmachine (1.2.7)
+    faker (3.4.1)
+      i18n (>= 1.8.11, < 2)
     faye-websocket (0.11.3)
       eventmachine (>= 0.12.0)
       websocket-driver (>= 0.5.1)
@@ -268,6 +270,7 @@ DEPENDENCIES
   debug
   devise
   devise-jwt
+  faker
   jsonapi-serializer
   mailcatcher
   pg (~> 1.1)
