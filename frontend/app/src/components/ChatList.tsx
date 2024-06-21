@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Group, DirectMessage } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
+import "../styles/ChatList.css"; // 正しいパスでCSSをインポート
 
 const ChatList: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -47,10 +48,10 @@ const ChatList: React.FC = () => {
   });
 
   return (
-    <div>
+    <div className="chat-list-container">
       <h1>Chat List</h1>
       <h2>Group Chats</h2>
-      <ul>
+      <ul className="chat-list">
         {groups.map((group) => (
           <li key={group.id}>
             <Link to={`/groups/${group.id}`}>{group.name}</Link>
@@ -58,7 +59,7 @@ const ChatList: React.FC = () => {
         ))}
       </ul>
       <h2>Direct Chats</h2>
-      <ul>
+      <ul className="chat-list">
         {Array.from(uniqueChatPartners.values()).map((dm) => (
           <li key={dm.id}>
             <Link to={`/direct_messages/${dm.id}`}>

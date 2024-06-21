@@ -1,0 +1,40 @@
+.chat-list-container {
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.chat-list-container h1,
+.chat-list-container h2 {
+  color: #333;
+}
+
+.chat-list {
+  list-style: none; /* リストのドットを削除 */
+  padding: 0;
+}
+
+.chat-list li {
+  margin: 10px 0;
+  padding: 10px;
+  background-color: #fff;
+  border-radius: 4px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+}
+
+.chat-list li:hover {
+  background-color: #e6f7ff; /* ホバー時のブルー系背景色 */
+}
+
+.chat-list a {
+  text-decoration: none;
+  color: #007bff;
+  font-weight: bold;
+  transition: color 0.3s ease;
+}
+
+.chat-list a:hover {
+  color: #0056b3;
+}
