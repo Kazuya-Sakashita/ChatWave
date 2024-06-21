@@ -80,9 +80,11 @@ const DirectMessageDetail: React.FC = () => {
             <li key={message.id} className={`message ${messageClass}`}>
               <div className="content">
                 <strong>
-                  {message.sender_id === user?.id ? "You" : message.sender_name}
+                  {message.sender_id === user?.id
+                    ? "You :"
+                    : message.sender_name}
                 </strong>
-                : {message.content}
+                {message.content}
               </div>
             </li>
           );
