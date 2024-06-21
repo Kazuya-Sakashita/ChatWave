@@ -13,7 +13,9 @@ Rails.application.routes.draw do
   }
 
   resources :chats, only: [:index]
-  resources :groups, only: [:show]
+  resources :groups, only: [:show] do
+    post 'create_message', on: :member
+  end
   resources :direct_messages, only: [:show]
   get '/me', to: 'users#show'
 
