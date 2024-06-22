@@ -1,4 +1,5 @@
 Rails.application.routes.draw do
+  mount ActionCable.server => '/cable'
   root "home#index"
   devise_for :users, path: '', path_names: {
     sign_in: 'login',
