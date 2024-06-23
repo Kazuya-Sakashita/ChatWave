@@ -14,6 +14,7 @@ const GroupChatDetail: React.FC = () => {
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const { user } = useAuth(); // 現在のユーザー情報を取得
   const formRef = useRef<HTMLFormElement | null>(null); // メッセージフォームを参照
 
@@ -27,7 +28,9 @@ const GroupChatDetail: React.FC = () => {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          return response.text().then((text) => {
+            throw new Error(`Network response was not ok: ${text}`);
+          });
         }
         return response.json();
       })
@@ -53,7 +56,17 @@ const GroupChatDetail: React.FC = () => {
     const subscription: Partial<Subscription> = {
       received(data: { message: Message }) {
         console.log("Received message: ", data.message); // 受信確認
-        setMessages((prevMessages) => [...prevMessages, data.message]);
+        setMessages((prevMessages) => {
+          const messageIndex = prevMessages.findIndex(
+            (msg) => msg.id === data.message.id
+          );
+          if (messageIndex !== -1) {
+            const updatedMessages = [...prevMessages];
+            updatedMessages[messageIndex] = data.message;
+            return updatedMessages;
+          }
+          return [...prevMessages, data.message];
+        });
         scrollToForm();
       },
       connected() {
@@ -79,9 +92,15 @@ const GroupChatDetail: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    // 新しいメッセージをサーバーに送信
-    fetch(`http://localhost:3000/groups/${groupId}/create_message`, {
-      method: "POST",
+    const url =
+      editingMessageId !== null
+        ? `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`
+        : `http://localhost:3000/groups/${groupId}/create_message`;
+
+    const method = editingMessageId !== null ? "PUT" : "POST";
+
+    fetch(url, {
+      method: method,
       credentials: "include",
       headers: {
         "Content-Type": "application/json",
@@ -90,18 +109,41 @@ const GroupChatDetail: React.FC = () => {
     })
       .then((response) => {
         if (!response.ok) {
-          throw new Error("Network response was not ok");
+          return response.text().then((text) => {
+            throw new Error(`Network response was not ok: ${text}`);
+          });
         }
         return response.json();
       })
-      .then(() => {
+      .then((data) => {
+        if (editingMessageId !== null) {
+          // 編集モードの終了
+          setMessages((prevMessages) =>
+            prevMessages.map((msg) =>
+              msg.id === editingMessageId
+                ? { ...msg, content: newMessage }
+                : msg
+            )
+          );
+          setEditingMessageId(null);
+          console.log("Message edited successfully", data); // デバッグ用ログ
+        } else {
+          setMessages((prevMessages) => [...prevMessages, data.message]);
+          console.log("Message sent successfully", data); // デバッグ用ログ
+        }
         setNewMessage("");
-        console.log("Message sent successfully"); // デバッグ用ログ
         scrollToForm();
       })
       .catch((error) => {
         console.error("There was a problem with the fetch operation:", error);
       });
+  };
+
+  // メッセージ編集開始ハンドラー
+  const handleEdit = (messageId: number, currentContent: string) => {
+    setEditingMessageId(messageId);
+    setNewMessage(currentContent); // フォームに編集対象のメッセージを表示
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
   // メッセージフォームまでスクロール
@@ -131,6 +173,13 @@ const GroupChatDetail: React.FC = () => {
               <div className="content">
                 <strong>{message.sender_name}</strong> ({message.created_at}):{" "}
                 {message.content}
+                {message.sender_name === user?.name && (
+                  <button
+                    onClick={() => handleEdit(message.id, message.content)}
+                  >
+                    Edit
+                  </button>
+                )}
               </div>
             </li>
           );
@@ -143,7 +192,9 @@ const GroupChatDetail: React.FC = () => {
           onChange={(e) => setNewMessage(e.target.value)}
           placeholder="Type your message..."
         />
-        <button type="submit">Send</button>
+        <button type="submit">
+          {editingMessageId !== null ? "Update" : "Send"}
+        </button>
       </form>
     </div>
   );

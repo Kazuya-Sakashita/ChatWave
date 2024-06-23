@@ -1,6 +1,6 @@
 class GroupsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_group, only: [:show, :create_message]
+  before_action :set_group, only: [:show, :create_message, :update_message]
 
   def show
     messages = @group.messages.includes(:sender).map do |message|
@@ -24,10 +24,32 @@ class GroupsController < ApplicationController
     end
   end
 
+  # 既存のメッセージを更新するアクション
+  def update_message
+    Rails.logger.info "Update params: #{params.inspect}"
+
+    message = @group.messages.find_by(id: params[:id])
+
+    if message.nil?
+      Rails.logger.error "Message not found in the group"
+      render json: { error: 'Message not found in the group' }, status: :not_found
+      return
+    end
+
+    if message.update(content: params[:content])
+      formatted_message = format_message(message)
+      ActionCable.server.broadcast("message_channel_group_#{@group.id}", { message: formatted_message })
+      render json: { message: formatted_message }, status: :ok
+    else
+      render json: { errors: message.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
   private
 
+  # グループを取得するメソッド
   def set_group
-    @group = Group.find(params[:id])
+    @group = Group.find(params[:group_id] || params[:id])
   rescue ActiveRecord::RecordNotFound
     render json: { error: "Group not found" }, status: :not_found
   end
@@ -35,8 +57,9 @@ class GroupsController < ApplicationController
   def format_message(message)
     {
       id: message.id,
-      sender_name: message.sender.name,
+      sender_id: message.sender_id,
       content: message.content,
+      sender_name: message.sender.name,
       created_at: message.created_at.strftime("%Y-%m-%d %H:%M")
     }
   end
