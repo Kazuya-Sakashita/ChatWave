@@ -1,6 +1,6 @@
 class GroupsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_group, only: [:show, :create_message, :update_message]
+  before_action :set_group, only: [:show, :create_message, :update_message, :destroy_message]
 
   def show
     messages = @group.messages.includes(:sender).map do |message|
@@ -44,6 +44,26 @@ class GroupsController < ApplicationController
       render json: { errors: message.errors.full_messages }, status: :unprocessable_entity
     end
   end
+
+  def destroy_message
+    Rails.logger.info "Delete params: #{params.inspect}"
+
+    message = @group.messages.find_by(id: params[:id])
+
+    if message.nil?
+      Rails.logger.error "Message not found in the group"
+      render json: { error: 'Message not found in the group' }, status: :not_found
+      return
+    end
+
+    if message.destroy
+      ActionCable.server.broadcast("message_channel_group_#{@group.id}", { action: "delete", message_id: message.id })
+      render json: { message: 'Message deleted successfully' }, status: :ok
+    else
+      render json: { errors: 'Failed to delete the message' }, status: :unprocessable_entity
+    end
+  end
+
 
   private
 

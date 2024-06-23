@@ -28,20 +28,18 @@ const GroupChatDetail: React.FC = () => {
     })
       .then((response) => {
         if (!response.ok) {
-          return response.text().then((text) => {
-            throw new Error(`Network response was not ok: ${text}`);
-          });
+          throw new Error("ネットワーク応答が正常ではありません");
         }
         return response.json();
       })
       .then((data) => {
         setGroup(data.group);
         setMessages(data.messages);
-        console.log("Fetched group and messages: ", data); // デバッグ用ログ
+        console.log("グループとメッセージを取得しました: ", data); // デバッグ用ログ
         scrollToForm();
       })
       .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+        console.error("フェッチ操作に問題がありました:", error);
       });
 
     // Action Cableの設定
@@ -54,26 +52,41 @@ const GroupChatDetail: React.FC = () => {
     };
 
     const subscription: Partial<Subscription> = {
-      received(data: { message: Message }) {
-        console.log("Received message: ", data.message); // 受信確認
-        setMessages((prevMessages) => {
-          const messageIndex = prevMessages.findIndex(
-            (msg) => msg.id === data.message.id
+      received(data: {
+        message: Message;
+        message_id?: number;
+        action?: string;
+      }) {
+        console.log("メッセージを受信しました: ", data); // 受信確認
+
+        if (data.action === "delete" && data.message_id) {
+          setMessages((prevMessages) =>
+            prevMessages.filter((message) => message.id !== data.message_id)
           );
-          if (messageIndex !== -1) {
-            const updatedMessages = [...prevMessages];
-            updatedMessages[messageIndex] = data.message;
-            return updatedMessages;
-          }
-          return [...prevMessages, data.message];
-        });
+        } else {
+          setMessages((prevMessages) => {
+            const existingIndex = prevMessages.findIndex(
+              (message) => message.id === data.message.id
+            );
+            if (existingIndex !== -1) {
+              // 既存のメッセージを更新
+              const updatedMessages = [...prevMessages];
+              updatedMessages[existingIndex] = data.message;
+              return updatedMessages;
+            } else {
+              // 新しいメッセージを追加
+              return [...prevMessages, data.message];
+            }
+          });
+        }
+
         scrollToForm();
       },
       connected() {
-        console.log("Connected to the channel");
+        console.log("チャンネルに接続しました");
       },
       disconnected() {
-        console.log("Disconnected from the channel");
+        console.log("チャンネルから切断されました");
       },
     };
 
@@ -92,51 +105,63 @@ const GroupChatDetail: React.FC = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
-    const url =
-      editingMessageId !== null
-        ? `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`
-        : `http://localhost:3000/groups/${groupId}/create_message`;
-
-    const method = editingMessageId !== null ? "PUT" : "POST";
-
-    fetch(url, {
-      method: method,
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ content: newMessage }),
-    })
-      .then((response) => {
-        if (!response.ok) {
-          return response.text().then((text) => {
-            throw new Error(`Network response was not ok: ${text}`);
-          });
+    if (editingMessageId !== null) {
+      // メッセージの編集
+      fetch(
+        `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`,
+        {
+          method: "PUT",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ content: newMessage }),
         }
-        return response.json();
-      })
-      .then((data) => {
-        if (editingMessageId !== null) {
-          // 編集モードの終了
-          setMessages((prevMessages) =>
-            prevMessages.map((msg) =>
-              msg.id === editingMessageId
-                ? { ...msg, content: newMessage }
-                : msg
-            )
-          );
+      )
+        .then((response) => {
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
+          }
+          return response.json();
+        })
+        .then(() => {
           setEditingMessageId(null);
-          console.log("Message edited successfully", data); // デバッグ用ログ
-        } else {
-          setMessages((prevMessages) => [...prevMessages, data.message]);
-          console.log("Message sent successfully", data); // デバッグ用ログ
-        }
-        setNewMessage("");
-        scrollToForm();
+          setNewMessage("");
+          console.log("メッセージを編集しました"); // デバッグ用ログ
+          scrollToForm();
+        })
+        .catch((error) => {
+          console.error("フェッチ操作に問題がありました:", error);
+        });
+    } else {
+      // 新しいメッセージをサーバーに送信
+      fetch(`http://localhost:3000/groups/${groupId}/create_message`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: newMessage }),
       })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-      });
+        .then((response) => {
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
+          }
+          return response.json();
+        })
+        .then(() => {
+          setNewMessage("");
+          console.log("メッセージを送信しました"); // デバッグ用ログ
+          scrollToForm();
+        })
+        .catch((error) => {
+          console.error("フェッチ操作に問題がありました:", error);
+        });
+    }
   };
 
   // メッセージ編集開始ハンドラー
@@ -144,6 +169,31 @@ const GroupChatDetail: React.FC = () => {
     setEditingMessageId(messageId);
     setNewMessage(currentContent); // フォームに編集対象のメッセージを表示
     formRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // メッセージ削除ハンドラー
+  const handleDelete = (messageId: number) => {
+    if (window.confirm("このメッセージを削除してもよろしいですか？")) {
+      fetch(`http://localhost:3000/groups/${groupId}/messages/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      })
+        .then((response) => {
+          if (!response.ok) {
+            return response.text().then((text) => {
+              throw new Error(text);
+            });
+          }
+          console.log("メッセージを削除しました"); // デバッグ用ログ
+          scrollToForm();
+        })
+        .catch((error) => {
+          console.error("削除操作に問題がありました:", error);
+        });
+    }
   };
 
   // メッセージフォームまでスクロール
@@ -155,7 +205,7 @@ const GroupChatDetail: React.FC = () => {
 
   // グループ情報が読み込まれていない場合のローディング表示
   if (!group) {
-    return <div>Loading...</div>;
+    return <div>読み込み中...</div>;
   }
 
   return (
@@ -174,12 +224,21 @@ const GroupChatDetail: React.FC = () => {
                 <strong>{message.sender_name}</strong> ({message.created_at}):{" "}
                 {message.content}
                 {message.sender_name === user?.name && (
-                  <button
-                    onClick={() => handleEdit(message.id, message.content)}
-                  >
-                    Edit
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleEdit(message.id, message.content)}
+                    >
+                      編集
+                    </button>
+                    <button
+                      className="delete"
+                      onClick={() => handleDelete(message.id)}
+                    >
+                      削除
+                    </button>
+                  </>
                 )}
+                {message.edited && <span>(編集済)</span>}
               </div>
             </li>
           );
@@ -190,10 +249,10 @@ const GroupChatDetail: React.FC = () => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="メッセージを入力してください..."
         />
         <button type="submit">
-          {editingMessageId !== null ? "Update" : "Send"}
+          {editingMessageId !== null ? "更新" : "送信"}
         </button>
       </form>
     </div>

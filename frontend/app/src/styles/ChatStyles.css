@@ -51,3 +51,53 @@
 .form-container button:hover {
   background-color: #45a049;
 }
+
+.message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.message .content {
+  flex-grow: 1;
+}
+
+.message .actions {
+  display: flex;
+  gap: 5px; /* ボタン間のスペース */
+  margin-left: 10px;
+}
+
+.message button {
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.message button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.message button:active {
+  background-color: #004085;
+  transform: translateY(0);
+}
+
+.message button.delete {
+  background-color: #dc3545;
+}
+
+.message button.delete:hover {
+  background-color: #c82333;
+}
+
+.message button.delete:active {
+  background-color: #bd2130;
+}

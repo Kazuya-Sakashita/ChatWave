@@ -63,4 +63,19 @@ export type Message = {
   content: string;
   sender_name: string; // 送信者の名前
   created_at: string; // 作成日時
+  edited?: boolean; // 編集されたかどうか
+  deleted?: boolean; // 削除されたかどうか
 };
+
+// GroupChatDetailのローカルステートの型を定義
+export interface GroupChatDetailState {
+  group: Group | null;
+  messages: Message[];
+  newMessage: string;
+  editingMessageId: number | null;
+}
+
+// GroupMessageUpdateResponseの型を定義
+export interface GroupMessageUpdateResponse {
+  message: Message;
+}
