@@ -5,13 +5,12 @@ import store from "./store";
 import SignupPage from "./components/SignupPage";
 import LoginPage from "./components/LoginPage";
 import Header from "./components/Header";
-import HomePage from "./components/HomePage";
 import RequireAuth from "./components/RequireAuth";
 import EmailConfirmationPage from "./components/EmailConfirmationPage";
 import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
 import PasswordResetPage from "./components/PasswordResetPage";
 import ChatList from "./components/ChatList";
-import GroupChatDetail from "./components/GroupChatDetail";
+import GroupChatDetail from "./components/GroupChatDetail/GroupChatDetail";
 import DirectMessageDetail from "./components/DirectMessageDetail";
 
 const App: React.FC = () => {
@@ -24,7 +23,7 @@ const App: React.FC = () => {
             path="/"
             element={
               <RequireAuth>
-                <HomePage />
+                <ChatList />
               </RequireAuth>
             }
           />

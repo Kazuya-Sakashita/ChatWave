@@ -43,6 +43,7 @@ export interface PasswordResetPageState {
 export type Group = {
   id: number;
   name: string;
+  hasNewMessages?: boolean; // 新着メッセージの有無
 };
 
 // DirectMessage型を定義
@@ -78,4 +79,14 @@ export interface GroupChatDetailState {
 // GroupMessageUpdateResponseの型を定義
 export interface GroupMessageUpdateResponse {
   message: Message;
+}
+
+// NewMessagesResponseの型を定義
+export interface NewMessagesResponse {
+  new_messages: number[]; // 新着メッセージのグループIDのリスト
+}
+
+// ErrorMessageコンポーネントのプロパティの型を定義（stringまたはnull）
+export interface ErrorMessageProps {
+  message: string | null;
 }
