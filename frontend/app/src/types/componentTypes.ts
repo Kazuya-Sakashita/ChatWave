@@ -90,3 +90,16 @@ export interface NewMessagesResponse {
 export interface ErrorMessageProps {
   message: string | null;
 }
+
+// src/types/componentTypes.ts
+
+export interface MessageContextProps {
+  newMessages: { [key: number]: boolean };
+  setNewMessages: React.Dispatch<
+    React.SetStateAction<{ [key: number]: boolean }>
+  >;
+}
+
+export interface MessageProviderProps {
+  children: React.ReactNode; // childrenの型を追加
+}

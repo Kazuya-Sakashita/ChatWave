@@ -52,6 +52,7 @@
   background-color: #45a049;
 }
 
+/* メッセージのアクションボタンのスタイル */
 .message {
   display: flex;
   justify-content: space-between;

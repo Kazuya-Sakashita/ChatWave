@@ -1,6 +1,6 @@
 class GroupsController < ApplicationController
   before_action :authenticate_user!
-  before_action :set_group, only: [:show, :create_message, :update_message, :destroy_message]
+  before_action :set_group, only: [:show, :create_message, :update_message, :destroy_message, :clear_new_messages]
 
   def show
     messages = @group.messages.includes(:sender).map do |message|
@@ -33,7 +33,6 @@ class GroupsController < ApplicationController
     end
   end
 
-
   def new_messages
     user_id = current_user.id
     group_new_messages = {}
@@ -49,8 +48,8 @@ class GroupsController < ApplicationController
   end
 
   def clear_new_messages
-    Rails.logger.info "Clearing new messages for group #{params[:group_id]} and user #{current_user.id}"
-    redis.hdel("group:#{params[:group_id]}:new_messages", current_user.id)
+    Rails.logger.info "Clearing new messages for group #{params[:id]} and user #{current_user.id}"
+    redis.hdel("group:#{params[:id]}:new_messages", current_user.id)
     render json: { message: 'New messages cleared' }, status: :ok
   rescue => e
     Rails.logger.error "Failed to clear new messages: #{e.message}"

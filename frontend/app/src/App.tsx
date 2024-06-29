@@ -12,67 +12,72 @@ import PasswordResetPage from "./components/PasswordResetPage";
 import ChatList from "./components/ChatList";
 import GroupChatDetail from "./components/GroupChatDetail/GroupChatDetail";
 import DirectMessageDetail from "./components/DirectMessageDetail";
+import { MessageProvider } from "./context/MessageContext";
 
 const App: React.FC = () => {
   return (
     <Provider store={store}>
-      <Router>
-        <Header />
-        <Routes>
-          <Route
-            path="/"
-            element={
-              <RequireAuth>
-                <ChatList />
-              </RequireAuth>
-            }
-          />
-          <Route path="/signup" element={<SignupPage />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/confirmation" element={<EmailConfirmationPage />} />
-          <Route
-            path="/password/reset"
-            element={<PasswordResetRequestPage />}
-          />
-          <Route
-            path="/password/edit/:reset_password_token"
-            element={<PasswordResetPage />}
-          />
-          <Route
-            path="/chats"
-            element={
-              <RequireAuth>
-                <ChatList />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/groups/:groupId"
-            element={
-              <RequireAuth>
-                <GroupChatDetail />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/direct_messages"
-            element={
-              <RequireAuth>
-                <GroupChatDetail />
-              </RequireAuth>
-            }
-          />
-          <Route
-            path="/direct_messages/:messageId"
-            element={
-              <RequireAuth>
-                <DirectMessageDetail />
-              </RequireAuth>
-            }
-          />
-          {/* 他のルート */}
-        </Routes>
-      </Router>
+      <MessageProvider>
+        {" "}
+        {/* MessageProviderでアプリ全体をラップする */}
+        <Router>
+          <Header />
+          <Routes>
+            <Route
+              path="/"
+              element={
+                <RequireAuth>
+                  <ChatList />
+                </RequireAuth>
+              }
+            />
+            <Route path="/signup" element={<SignupPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/confirmation" element={<EmailConfirmationPage />} />
+            <Route
+              path="/password/reset"
+              element={<PasswordResetRequestPage />}
+            />
+            <Route
+              path="/password/edit/:reset_password_token"
+              element={<PasswordResetPage />}
+            />
+            <Route
+              path="/chats"
+              element={
+                <RequireAuth>
+                  <ChatList />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/groups/:groupId"
+              element={
+                <RequireAuth>
+                  <GroupChatDetail />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/direct_messages"
+              element={
+                <RequireAuth>
+                  <GroupChatDetail />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/direct_messages/:messageId"
+              element={
+                <RequireAuth>
+                  <DirectMessageDetail />
+                </RequireAuth>
+              }
+            />
+            {/* 他のルート */}
+          </Routes>
+        </Router>
+      </MessageProvider>
     </Provider>
   );
 };

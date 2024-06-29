@@ -1,10 +1,11 @@
-import React, { useRef } from "react";
+import React from "react";
 
 interface MessageFormProps {
   newMessage: string;
   setNewMessage: React.Dispatch<React.SetStateAction<string>>;
   handleSubmit: (e: React.FormEvent) => void;
   formRef: React.RefObject<HTMLFormElement>;
+  inputRef: React.RefObject<HTMLInputElement>; // 入力フィールドの参照
 }
 
 const MessageForm: React.FC<MessageFormProps> = ({
@@ -12,6 +13,7 @@ const MessageForm: React.FC<MessageFormProps> = ({
   setNewMessage,
   handleSubmit,
   formRef,
+  inputRef, // 入力フィールドの参照を受け取る
 }) => {
   return (
     <form className="form-container" onSubmit={handleSubmit} ref={formRef}>
@@ -20,6 +22,7 @@ const MessageForm: React.FC<MessageFormProps> = ({
         value={newMessage}
         onChange={(e) => setNewMessage(e.target.value)}
         placeholder="メッセージを入力してください..."
+        ref={inputRef} // 入力フィールドの参照を設定
       />
       <button type="submit">{newMessage ? "更新" : "送信"}</button>
     </form>

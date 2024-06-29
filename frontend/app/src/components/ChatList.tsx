@@ -1,3 +1,5 @@
+// src/components/ChatList.tsx
+
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { Group, DirectMessage } from "../types/componentTypes";
@@ -8,16 +10,16 @@ import {
   ChannelNameWithParams,
   Subscription,
 } from "@rails/actioncable";
+import { useMessageContext } from "../context/MessageContext"; // MessageContextをインポートして使用
 
 const ChatList: React.FC = () => {
-  const [groups, setGroups] = useState<Group[]>([]);
-  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
-  const [newMessages, setNewMessages] = useState<{ [key: number]: boolean }>(
-    {}
-  );
-  const { user } = useAuth();
+  const [groups, setGroups] = useState<Group[]>([]); // グループチャットのリストを保持する状態
+  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]); // ダイレクトメッセージのリストを保持する状態
+  const { user } = useAuth(); // 現在のユーザー情報を取得
+  const { newMessages, setNewMessages } = useMessageContext(); // 新しいメッセージのフラグを管理するコンテキスト
 
   useEffect(() => {
+    // チャットデータをフェッチする関数
     const fetchChats = async () => {
       try {
         const response = await fetch("http://localhost:3000/chats", {
@@ -31,13 +33,14 @@ const ChatList: React.FC = () => {
           throw new Error("Network response was not ok");
         }
         const data = await response.json();
-        setGroups(data.groups);
-        setDirectMessages(data.direct_messages);
+        setGroups(data.groups); // グループチャットのデータを状態にセット
+        setDirectMessages(data.direct_messages); // ダイレクトメッセージのデータを状態にセット
       } catch (error) {
         console.error("There was a problem with the fetch operation:", error);
       }
     };
 
+    // 新しいメッセージのフラグをフェッチする関数
     const fetchNewMessages = async () => {
       try {
         const response = await fetch(
@@ -55,7 +58,7 @@ const ChatList: React.FC = () => {
         }
         const newMessagesResponse = await response.json();
         console.log("New messages response: ", newMessagesResponse); // デバッグ用ログ
-        setNewMessages(newMessagesResponse.new_messages);
+        setNewMessages(newMessagesResponse.new_messages); // 新しいメッセージのフラグを状態にセット
       } catch (error) {
         console.error("There was a problem with the fetch operation:", error);
       }
@@ -77,7 +80,7 @@ const ChatList: React.FC = () => {
         if (data.sender_id !== user?.id) {
           setNewMessages((prevNewMessages) => ({
             ...prevNewMessages,
-            [data.group_id]: true,
+            [data.group_id]: true, // 新しいメッセージのフラグを更新
           }));
         }
       },
@@ -95,14 +98,16 @@ const ChatList: React.FC = () => {
     );
 
     return () => {
-      channel.unsubscribe();
+      channel.unsubscribe(); // コンポーネントがアンマウントされたときにサブスクリプションを解除
     };
-  }, [user]);
+  }, [user, setNewMessages]);
 
+  // ダイレクトメッセージの相手の名前を取得する関数
   const getChatPartnerName = (dm: DirectMessage) => {
     return dm.sender_id === user?.id ? dm.recipient_name : dm.sender_name;
   };
 
+  // グループチャットをクリックしたときに新しいメッセージのフラグをクリアする関数
   const handleGroupClick = async (groupId: number) => {
     try {
       if (newMessages[groupId]) {
@@ -121,7 +126,7 @@ const ChatList: React.FC = () => {
         }
         setNewMessages((prevNewMessages) => {
           const updatedNewMessages = { ...prevNewMessages };
-          delete updatedNewMessages[groupId];
+          delete updatedNewMessages[groupId]; // 新しいメッセージのフラグをクリア
           return updatedNewMessages;
         });
         console.log(`Cleared new messages for group ${groupId}`); // デバッグ用ログ
