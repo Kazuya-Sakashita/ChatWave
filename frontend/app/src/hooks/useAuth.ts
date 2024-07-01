@@ -15,6 +15,7 @@ const useAuth = () => {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const user = useSelector(selectCurrentUser);
   const [hasFetched, setHasFetched] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // ローディング状態を追加
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -27,6 +28,7 @@ const useAuth = () => {
           console.log("User info fetched successfully:", response.data);
           dispatch(loginSuccess({ token, user: response.data }));
           setHasFetched(true);
+          setIsLoading(false); // フェッチ完了
         })
         .catch((error) => {
           console.error("Failed to fetch user info:", error);
@@ -36,10 +38,12 @@ const useAuth = () => {
             console.error("Unexpected error:", error);
           }
           dispatch(logoutSuccess());
-          setHasFetched(true); // エラーが発生してもフェッチを終了
+          setHasFetched(true);
+          setIsLoading(false); // フェッチ完了
         });
     } else if (!token) {
       setHasFetched(true);
+      setIsLoading(false); // フェッチ完了
       console.log("No token found in localStorage");
     }
   }, [dispatch, hasFetched]);
@@ -48,7 +52,7 @@ const useAuth = () => {
     console.log("useAuth hook state updated:", { isAuthenticated, user });
   }, [isAuthenticated, user]);
 
-  return { isAuthenticated, user };
+  return { isAuthenticated, user, isLoading }; // isLoadingを返す
 };
 
 export default useAuth;

@@ -6,25 +6,37 @@ import "../styles/ChatStyles.css";
 import { createConsumer, Subscription } from "@rails/actioncable";
 
 const DirectMessageDetail: React.FC = () => {
+  // URLパラメータからmessageIdを取得します
   const { messageId } = useParams<{ messageId: string }>();
+
+  // メッセージの状態を管理するためのuseStateフック
   const [messages, setMessages] = useState<DirectMessage[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const { user, isAuthenticated } = useAuth();
+  const [newMessage, setNewMessage] = useState(""); // 新しいメッセージの内容を管理するためのuseStateフック
+
+  // ユーザー認証情報を取得するカスタムフック
+  const { user, isAuthenticated, isLoading } = useAuth();
+
+  // メッセージリストの末尾にスクロールするための参照
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // フォームの参照
   const formRef = useRef<HTMLFormElement>(null);
 
+  // メッセージリストの末尾にスクロールする関数
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  // フォームにスクロールする関数
   const scrollToForm = () => {
     if (formRef.current) {
       formRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  // メッセージを取得するための関数
   const fetchDirectMessages = useCallback(async () => {
     if (!messageId) return;
     try {
@@ -43,25 +55,36 @@ const DirectMessageDetail: React.FC = () => {
       }
       const data = await response.json();
       setMessages(data.direct_messages || []);
-      scrollToBottom();
+      scrollToBottom(); // メッセージを取得した後、リストの末尾にスクロール
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
-      setMessages([]);
+      setMessages([]); // エラーが発生した場合、メッセージを空にする
     }
   }, [messageId]);
 
   useEffect(() => {
-    fetchDirectMessages();
+    if (isLoading) return; // isLoading中は何もしない
 
-    if (!isAuthenticated || !user || !messageId) return;
+    // 認証状態、ユーザー、またはmessageIdが存在しない場合、エラーメッセージを表示
+    if (!isAuthenticated || !user || !messageId) {
+      console.error("Authentication status, user, or messageId is missing:", {
+        isAuthenticated,
+        user,
+        messageId,
+      });
+      return;
+    }
 
+    fetchDirectMessages(); // メッセージを取得
+
+    // Action CableのWebSocket接続を作成
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const subscription: Partial<Subscription> = {
       received(data: { direct_message: DirectMessage }) {
         console.log("Received message via WebSocket:", data);
         setMessages((prevMessages) => [...prevMessages, data.direct_message]);
-        scrollToForm();
+        scrollToForm(); // 新しいメッセージを受信したらフォームにスクロール
       },
       connected() {
         console.log("Connected to the channel");
@@ -71,6 +94,7 @@ const DirectMessageDetail: React.FC = () => {
       },
     };
 
+    // WebSocketチャネルにサブスクライブ
     const channel = cable.subscriptions.create(
       { channel: "DirectMessagesChannel", user_id: user.id.toString() },
       subscription as Subscription
@@ -82,8 +106,9 @@ const DirectMessageDetail: React.FC = () => {
       channel.unsubscribe();
       console.log("Unsubscribed from the channel");
     };
-  }, [fetchDirectMessages, isAuthenticated, user, messageId]);
+  }, [fetchDirectMessages, isAuthenticated, isLoading, user, messageId]);
 
+  // メッセージ送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newMessage.trim() === "") {
@@ -125,12 +150,18 @@ const DirectMessageDetail: React.FC = () => {
       console.log("メッセージが送信されました:", data);
       setMessages((prevMessages) => [...prevMessages, data.direct_message]);
       setNewMessage("");
-      scrollToBottom();
+      scrollToBottom(); // メッセージを送信した後、リストの末尾にスクロール
     } catch (error) {
       console.error("フェッチ操作に問題が発生しました:", error);
     }
   };
 
+  // ローディング中の表示
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  // 認証情報がない場合の表示
   if (!isAuthenticated || !user || !messageId) {
     return <div>Loading...</div>;
   }
@@ -150,7 +181,7 @@ const DirectMessageDetail: React.FC = () => {
                 <div className="content">
                   <strong>
                     {message.sender_id === user?.id
-                      ? "You :"
+                      ? "自分 :"
                       : message.sender_name}
                   </strong>
                   {message.content}
@@ -166,9 +197,9 @@ const DirectMessageDetail: React.FC = () => {
           type="text"
           value={newMessage}
           onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="Type your message..."
+          placeholder="メッセージを入力してください..."
         />
-        <button type="submit">Send</button>
+        <button type="submit">送信</button>
       </form>
     </div>
   );
