@@ -10,6 +10,10 @@ class User < ApplicationRecord
   has_many :friends, through: :friendships, source: :friend
   has_many :group_memberships, class_name: "GroupMember"
   has_many :groups, through: :group_memberships
+  # 送信したダイレクトメッセージ
+  has_many :sent_direct_messages, class_name: 'DirectMessage', foreign_key: 'sender_id'
+  # 受信したダイレクトメッセージ
+  has_many :received_direct_messages, class_name: 'DirectMessage', foreign_key: 'recipient_id'
 
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true

@@ -1,78 +1,65 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { DirectMessage } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
 import "../styles/ChatStyles.css";
-import {
-  createConsumer,
-  ChannelNameWithParams,
-  Subscription,
-} from "@rails/actioncable";
+import { createConsumer, Subscription } from "@rails/actioncable";
 
 const DirectMessageDetail: React.FC = () => {
   const { messageId } = useParams<{ messageId: string }>();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
-  const { user } = useAuth(); // 現在のユーザー情報を取得
+  const { user, isAuthenticated } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
   const scrollToBottom = () => {
-    console.log("scrollToBottom called");
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
   const scrollToForm = () => {
-    console.log("scrollToForm called");
     if (formRef.current) {
       formRef.current.scrollIntoView({ behavior: "smooth" });
     }
   };
 
+  const fetchDirectMessages = useCallback(async () => {
+    if (!messageId) return;
+    try {
+      const response = await fetch(
+        `http://localhost:3000/direct_messages/${messageId}`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error(`Network response was not ok: ${response.statusText}`);
+      }
+      const data = await response.json();
+      setMessages(data.direct_messages || []);
+      scrollToBottom();
+    } catch (error) {
+      console.error("There was a problem with the fetch operation:", error);
+      setMessages([]);
+    }
+  }, [messageId]);
+
   useEffect(() => {
-    console.log("useEffect called, fetching direct messages...");
-    fetch(`http://localhost:3000/direct_messages/${messageId}`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        console.log("Response status:", response.status);
-        if (!response.ok) {
-          throw new Error(
-            `Network response was not ok: ${response.statusText}`
-          );
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Received data:", data);
-        if (data && data.direct_messages) {
-          setMessages(data.direct_messages);
-          scrollToBottom();
-        } else {
-          setMessages([]);
-        }
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
-        setMessages([]); // エラーが発生した場合でも空の配列を設定
-      });
+    fetchDirectMessages();
 
-    // Action Cableの設定
+    if (!isAuthenticated || !user || !messageId) return;
+
     const cable = createConsumer("ws://localhost:3000/cable");
-
-    const channelParams: ChannelNameWithParams = {
-      channel: "MessageChannel",
-      chat_room_type: "direct",
-      chat_room_id: messageId,
-    };
 
     const subscription: Partial<Subscription> = {
       received(data: { direct_message: DirectMessage }) {
-        console.log("Received message via WebSocket: ", data); // 受信確認
+        console.log("Received message via WebSocket:", data);
         setMessages((prevMessages) => [...prevMessages, data.direct_message]);
         scrollToForm();
       },
@@ -84,26 +71,28 @@ const DirectMessageDetail: React.FC = () => {
       },
     };
 
-    console.log("Subscribing to the channel with params: ", channelParams);
     const channel = cable.subscriptions.create(
-      channelParams,
+      { channel: "DirectMessagesChannel", user_id: user.id.toString() },
       subscription as Subscription
     );
 
     console.log("Subscribed to the channel");
 
     return () => {
-      console.log("Unsubscribing from the channel");
       channel.unsubscribe();
+      console.log("Unsubscribed from the channel");
     };
-  }, [messageId]);
+  }, [fetchDirectMessages, isAuthenticated, user, messageId]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit called");
+    if (newMessage.trim() === "") {
+      alert("メッセージを入力してください");
+      return;
+    }
 
     if (messages.length === 0) {
-      console.error("No messages available to determine recipient ID.");
+      console.error("メッセージが利用できないため、受信者IDを判断できません。");
       return;
     }
 
@@ -112,38 +101,39 @@ const DirectMessageDetail: React.FC = () => {
         ? messages[0].sender_id
         : messages[0].recipient_id;
 
-    console.log("Sending message to recipient ID:", recipientId);
-
-    fetch("http://localhost:3000/direct_messages", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        recipient_id: recipientId,
-        content: newMessage,
-      }),
-    })
-      .then((response) => {
-        console.log("Send response status:", response.status);
-        if (!response.ok) {
-          throw new Error(
-            `Network response was not ok: ${response.statusText}`
-          );
-        }
-        return response.json();
-      })
-      .then((data) => {
-        console.log("Message sent: ", data);
-        setMessages((prevMessages) => [...prevMessages, data.direct_message]);
-        setNewMessage("");
-        scrollToBottom();
-      })
-      .catch((error) => {
-        console.error("There was a problem with the fetch operation:", error);
+    try {
+      const response = await fetch("http://localhost:3000/direct_messages", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          direct_message: {
+            recipient_id: recipientId,
+            content: newMessage,
+          },
+        }),
       });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(
+          `Network response was not ok: ${response.statusText}\n${text}`
+        );
+      }
+      const data = await response.json();
+      console.log("メッセージが送信されました:", data);
+      setMessages((prevMessages) => [...prevMessages, data.direct_message]);
+      setNewMessage("");
+      scrollToBottom();
+    } catch (error) {
+      console.error("フェッチ操作に問題が発生しました:", error);
+    }
   };
+
+  if (!isAuthenticated || !user || !messageId) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div>
@@ -152,6 +142,7 @@ const DirectMessageDetail: React.FC = () => {
       ) : (
         <ul>
           {messages.map((message) => {
+            if (!message) return null;
             const messageClass =
               message.sender_id === user?.id ? "left" : "right";
             return (

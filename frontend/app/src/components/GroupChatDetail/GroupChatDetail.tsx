@@ -13,24 +13,16 @@ import "../../styles/ChatStyles.css";
 import { useMessageContext } from "../../context/MessageContext";
 
 const GroupChatDetail: React.FC = () => {
-  // URLパラメータからグループIDを取得
   const { groupId } = useParams<{ groupId: string }>();
-
-  // 状態管理
   const [group, setGroup] = useState<Group | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
-
-  // 認証情報とメッセージコンテキストを取得
   const { user } = useAuth();
   const { setNewMessages } = useMessageContext();
-
-  // フォームと入力フィールドの参照を保持
   const formRef = useRef<HTMLFormElement | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
 
-  // 新着メッセージフラグをクリアする関数
   const clearNewMessages = useCallback(async () => {
     try {
       const response = await fetch(
@@ -49,7 +41,6 @@ const GroupChatDetail: React.FC = () => {
       const data = await response.json();
       console.log("新着メッセージをクリアしました: ", data);
 
-      // コンテキストのnewMessagesも更新
       setNewMessages((prevNewMessages: { [key: number]: boolean }) => {
         const updatedNewMessages = { ...prevNewMessages };
         delete updatedNewMessages[Number(groupId)];
@@ -60,14 +51,12 @@ const GroupChatDetail: React.FC = () => {
     }
   }, [groupId, setNewMessages]);
 
-  // フォームまでスクロールし、入力フィールドにフォーカスを設定
   const scrollToForm = () => {
     formRef.current?.scrollIntoView({ behavior: "smooth" });
     inputRef.current?.focus();
   };
 
-  // グループデータを取得する関数
-  const fetchGroupData = async () => {
+  const fetchGroupData = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:3000/groups/${groupId}`, {
         method: "GET",
@@ -90,13 +79,11 @@ const GroupChatDetail: React.FC = () => {
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
-  };
+  }, [groupId, clearNewMessages]);
 
-  // コンポーネントの初期化時およびgroupIdの変更時に実行される
   useEffect(() => {
     fetchGroupData();
 
-    // Action Cableの設定
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const channelParams: ChannelNameWithParams = {
@@ -105,9 +92,7 @@ const GroupChatDetail: React.FC = () => {
       chat_room_id: groupId,
     };
 
-    // サブスクリプションの設定
     const subscription: Partial<Subscription> = {
-      // メッセージ受信時の処理
       received(data: {
         message: Message;
         message_id?: number;
@@ -115,7 +100,6 @@ const GroupChatDetail: React.FC = () => {
       }) {
         console.log("メッセージを受信しました: ", data);
 
-        // メッセージ削除の処理
         if (data.action === "delete" && data.message_id) {
           setMessages((prevMessages) =>
             prevMessages.filter((message) => message.id !== data.message_id)
@@ -134,8 +118,8 @@ const GroupChatDetail: React.FC = () => {
             }
           });
         }
-        clearNewMessages(); // メッセージを受信した際にも新着フラグをクリア
-        scrollToForm(); // フォームへスクロール
+        clearNewMessages();
+        scrollToForm();
       },
       connected() {
         console.log("チャンネルに接続しました");
@@ -150,13 +134,11 @@ const GroupChatDetail: React.FC = () => {
       subscription as Subscription
     );
 
-    // コンポーネントのクリーンアップ時にサブスクリプションを解除
     return () => {
       channel.unsubscribe();
     };
-  }, [groupId, clearNewMessages]);
+  }, [groupId, fetchGroupData, clearNewMessages]);
 
-  // メッセージ送信処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -166,7 +148,6 @@ const GroupChatDetail: React.FC = () => {
     }
 
     if (editingMessageId !== null) {
-      // メッセージ編集の処理
       try {
         const response = await fetch(
           `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`,
@@ -192,7 +173,6 @@ const GroupChatDetail: React.FC = () => {
         console.error("フェッチ操作に問題がありました:", error);
       }
     } else {
-      // 新規メッセージ送信の処理
       try {
         const response = await fetch(
           `http://localhost:3000/groups/${groupId}/create_message`,
@@ -219,14 +199,12 @@ const GroupChatDetail: React.FC = () => {
     }
   };
 
-  // メッセージ編集のためにフォームをセット
   const handleEdit = (messageId: number, currentContent: string) => {
     setEditingMessageId(messageId);
     setNewMessage(currentContent);
     scrollToForm();
   };
 
-  // メッセージ削除処理
   const handleDelete = async (messageId: number) => {
     if (window.confirm("このメッセージを削除してもよろしいですか？")) {
       try {
@@ -251,31 +229,25 @@ const GroupChatDetail: React.FC = () => {
     }
   };
 
-  // グループ情報がロードされていない場合の処理
   if (!group) {
     return <div>読み込み中...</div>;
   }
 
   return (
     <div>
-      {/* グループ名を表示 */}
       <h1>{group.name}</h1>
-
-      {/* メッセージリストコンポーネントを表示 */}
       <MessageList
-        messages={messages} // メッセージの配列を渡す
-        handleEdit={handleEdit} // メッセージ編集用の関数を渡す
-        handleDelete={handleDelete} // メッセージ削除用の関数を渡す
-        user={user} // 現在のユーザー情報を渡す
+        messages={messages}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        user={user}
       />
-
-      {/* メッセージフォームコンポーネントを表示 */}
       <MessageForm
-        newMessage={newMessage} // 新規メッセージの内容を渡す
-        setNewMessage={setNewMessage} // 新規メッセージを設定する関数を渡す
-        handleSubmit={handleSubmit} // メッセージ送信用の関数を渡す
-        formRef={formRef} // フォームの参照を渡す
-        inputRef={inputRef} // 入力フィールドの参照を渡す
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        handleSubmit={handleSubmit}
+        formRef={formRef}
+        inputRef={inputRef}
       />
     </div>
   );

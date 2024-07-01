@@ -26,33 +26,28 @@ class DirectMessagesController < ApplicationController
       direct_message.sender_id, direct_message.recipient_id,
       direct_message.recipient_id, direct_message.sender_id
     ).order(:created_at)
-    render json: { direct_messages: related_messages }
+    render json: { direct_messages: related_messages.map { |dm| format_direct_message(dm) } }
   end
 
   def create
-    direct_message = DirectMessage.new(
-      sender_id: current_user.id,
-      recipient_id: @recipient.id,
-      content: params[:content]
-    )
-
-    if direct_message.save
-      formatted_message = format_direct_message(direct_message)
-      Rails.logger.info "Broadcasting to: message_channel_direct_#{direct_message.sender_id}_#{direct_message.recipient_id} with #{formatted_message}"
-      ActionCable.server.broadcast("message_channel_direct_#{direct_message.sender_id}_#{direct_message.recipient_id}", { direct_message: formatted_message })
-      Rails.logger.info "Broadcasting to: message_channel_direct_#{direct_message.recipient_id}_#{direct_message.sender_id} with #{formatted_message}"
-      ActionCable.server.broadcast("message_channel_direct_#{direct_message.recipient_id}_#{direct_message.sender_id}", { direct_message: formatted_message })
-      render json: { direct_message: formatted_message }, status: :created
+    @direct_message = current_user.sent_direct_messages.new(direct_message_params)
+    if @direct_message.save
+      ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message) }
+      ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message) }
+      render json: @direct_message, status: :created
     else
-      Rails.logger.error "Failed to create direct message: #{direct_message.errors.full_messages.join(', ')}"
-      render json: { errors: direct_message.errors.full_messages }, status: :unprocessable_entity
+      render json: @direct_message.errors, status: :unprocessable_entity
     end
   end
 
   private
 
+  def direct_message_params
+    params.require(:direct_message).permit(:recipient_id, :content)
+  end
+
   def set_recipient
-    @recipient = User.find(params[:recipient_id])
+    @recipient = User.find(params[:direct_message][:recipient_id])
   rescue ActiveRecord::RecordNotFound
     render json: { errors: ["Recipient not found"] }, status: :not_found
   end
