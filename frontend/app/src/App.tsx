@@ -10,7 +10,7 @@ import EmailConfirmationPage from "./components/EmailConfirmationPage";
 import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
 import PasswordResetPage from "./components/PasswordResetPage";
 import ChatList from "./components/ChatList";
-import GroupChatDetail from "./components/GroupChatDetail/GroupChatDetail";
+import GroupChatDetail from "./components/GroupChatDetail";
 import DirectMessageDetail from "./components/DirectMessageDetail";
 import { MessageProvider } from "./context/MessageContext";
 

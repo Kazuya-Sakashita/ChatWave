@@ -2,44 +2,41 @@
 import React from "react";
 import { DirectMessage, Message } from "../types/componentTypes";
 
-interface MessageListProps {
-  messages: (Message | DirectMessage)[];
+interface MessageListProps<T> {
+  messages: T[];
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
 }
 
-const MessageList: React.FC<MessageListProps> = ({
+const MessageList = <
+  T extends {
+    id: number;
+    sender_name: string;
+    created_at: string;
+    content: string;
+    edited?: boolean;
+  }
+>({
   messages,
   handleEdit,
   handleDelete,
   user,
-}) => {
+}: MessageListProps<T>) => {
   return (
     <ul>
       {messages.map((message, index) => {
-        if (!message) return null;
-
-        const isDirectMessage = (msg: any): msg is DirectMessage =>
-          "recipient_id" in msg && "sender_id" in msg;
-
-        const senderId = isDirectMessage(message)
-          ? message.sender_id
-          : message.sender_id;
-        const senderName = isDirectMessage(message)
-          ? message.sender_name
-          : message.sender_name;
-        const messageClass = senderId === user?.id ? "left" : "right";
-
+        const messageClass =
+          message.sender_name === user?.name ? "left" : "right";
         return (
           <li
             key={`${message.id}-${index}`}
             className={`message ${messageClass}`}
           >
             <div className="content">
-              <strong>{senderName}</strong> ({message.created_at}):{" "}
+              <strong>{message.sender_name}</strong> ({message.created_at}):{" "}
               {message.content}
-              {senderId === user?.id && (
+              {message.sender_name === user?.name && (
                 <>
                   <button
                     onClick={() => handleEdit(message.id, message.content)}

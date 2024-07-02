@@ -1,3 +1,4 @@
+// frontend/app/src/components/MessageForm.tsx
 import React from "react";
 
 interface MessageFormProps {

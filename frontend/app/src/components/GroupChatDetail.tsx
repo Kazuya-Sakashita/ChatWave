@@ -1,13 +1,16 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Group, Message } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
-import "../styles/ChatStyles.css";
 import {
   createConsumer,
   ChannelNameWithParams,
   Subscription,
 } from "@rails/actioncable";
+import MessageList from "./MessageList";
+import MessageForm from "./MessageForm";
+import "../styles/ChatStyles.css";
+import { useMessageContext } from "../context/MessageContext";
 
 const GroupChatDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -15,34 +18,72 @@ const GroupChatDetail: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
-  const { user } = useAuth(); // 現在のユーザー情報を取得
-  const formRef = useRef<HTMLFormElement | null>(null); // メッセージフォームを参照
+  const { user } = useAuth();
+  const { setNewMessages } = useMessageContext();
+  const formRef = useRef<HTMLFormElement | null>(null);
+  const inputRef = useRef<HTMLInputElement | null>(null);
+
+  const clearNewMessages = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/groups/${groupId}/clear_new_messages`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("ネットワーク応答が正常ではありません");
+      }
+      const data = await response.json();
+      console.log("新着メッセージをクリアしました: ", data);
+
+      setNewMessages((prevNewMessages: { [key: number]: boolean }) => {
+        const updatedNewMessages = { ...prevNewMessages };
+        delete updatedNewMessages[Number(groupId)];
+        return updatedNewMessages;
+      });
+    } catch (error) {
+      console.error("フェッチ操作に問題がありました:", error);
+    }
+  }, [groupId, setNewMessages]);
+
+  const scrollToForm = () => {
+    formRef.current?.scrollIntoView({ behavior: "smooth" });
+    inputRef.current?.focus();
+  };
+
+  const fetchGroupData = useCallback(async () => {
+    try {
+      const response = await fetch(`http://localhost:3000/groups/${groupId}`, {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("ネットワーク応答が正常ではありません");
+      }
+      const data = await response.json();
+      setGroup(data.group);
+      setMessages(data.messages);
+      console.log("グループとメッセージを取得しました: ", data);
+      if (data.group.new_messages) {
+        await clearNewMessages();
+      }
+      scrollToForm();
+    } catch (error) {
+      console.error("フェッチ操作に問題がありました:", error);
+    }
+  }, [groupId, clearNewMessages]);
 
   useEffect(() => {
-    fetch(`http://localhost:3000/groups/${groupId}`, {
-      method: "GET",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("ネットワーク応答が正常ではありません");
-        }
-        return response.json();
-      })
-      .then((data) => {
-        setGroup(data.group);
-        setMessages(data.messages);
-        console.log("グループとメッセージを取得しました: ", data); // デバッグ用ログ
-        scrollToForm();
-      })
-      .catch((error) => {
-        console.error("フェッチ操作に問題がありました:", error);
-      });
+    fetchGroupData();
 
-    // Action Cableの設定
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const channelParams: ChannelNameWithParams = {
@@ -57,7 +98,7 @@ const GroupChatDetail: React.FC = () => {
         message_id?: number;
         action?: string;
       }) {
-        console.log("メッセージを受信しました: ", data); // 受信確認
+        console.log("メッセージを受信しました: ", data);
 
         if (data.action === "delete" && data.message_id) {
           setMessages((prevMessages) =>
@@ -69,17 +110,15 @@ const GroupChatDetail: React.FC = () => {
               (message) => message.id === data.message.id
             );
             if (existingIndex !== -1) {
-              // 既存のメッセージを更新
               const updatedMessages = [...prevMessages];
               updatedMessages[existingIndex] = data.message;
               return updatedMessages;
             } else {
-              // 新しいメッセージを追加
               return [...prevMessages, data.message];
             }
           });
         }
-
+        clearNewMessages();
         scrollToForm();
       },
       connected() {
@@ -95,166 +134,124 @@ const GroupChatDetail: React.FC = () => {
       subscription as Subscription
     );
 
-    // コンポーネントのアンマウント時にチャネルから退会
     return () => {
       channel.unsubscribe();
     };
-  }, [groupId]);
+  }, [groupId, fetchGroupData, clearNewMessages]);
 
-  // メッセージ送信ハンドラー
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    if (newMessage.trim() === "") {
+      alert("メッセージを入力してください");
+      return;
+    }
+
     if (editingMessageId !== null) {
-      // メッセージの編集
-      fetch(
-        `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`,
-        {
-          method: "PUT",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ content: newMessage }),
+      try {
+        const response = await fetch(
+          `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`,
+          {
+            method: "PUT",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content: newMessage }),
+          }
+        );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text);
         }
-      )
-        .then((response) => {
-          if (!response.ok) {
-            return response.text().then((text) => {
-              throw new Error(text);
-            });
-          }
-          return response.json();
-        })
-        .then(() => {
-          setEditingMessageId(null);
-          setNewMessage("");
-          console.log("メッセージを編集しました"); // デバッグ用ログ
-          scrollToForm();
-        })
-        .catch((error) => {
-          console.error("フェッチ操作に問題がありました:", error);
-        });
+        await response.json();
+        setEditingMessageId(null);
+        setNewMessage("");
+        scrollToForm();
+        console.log("メッセージを編集しました");
+      } catch (error) {
+        console.error("フェッチ操作に問題がありました:", error);
+      }
     } else {
-      // 新しいメッセージをサーバーに送信
-      fetch(`http://localhost:3000/groups/${groupId}/create_message`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ content: newMessage }),
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.text().then((text) => {
-              throw new Error(text);
-            });
+      try {
+        const response = await fetch(
+          `http://localhost:3000/groups/${groupId}/create_message`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ content: newMessage }),
           }
-          return response.json();
-        })
-        .then(() => {
-          setNewMessage("");
-          console.log("メッセージを送信しました"); // デバッグ用ログ
-          scrollToForm();
-        })
-        .catch((error) => {
-          console.error("フェッチ操作に問題がありました:", error);
-        });
+        );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text);
+        }
+        await response.json();
+        setNewMessage("");
+        scrollToForm();
+        console.log("メッセージを送信しました");
+      } catch (error) {
+        console.error("フェッチ操作に問題がありました:", error);
+      }
     }
   };
 
-  // メッセージ編集開始ハンドラー
   const handleEdit = (messageId: number, currentContent: string) => {
     setEditingMessageId(messageId);
-    setNewMessage(currentContent); // フォームに編集対象のメッセージを表示
-    formRef.current?.scrollIntoView({ behavior: "smooth" });
+    setNewMessage(currentContent);
+    scrollToForm();
   };
 
-  // メッセージ削除ハンドラー
-  const handleDelete = (messageId: number) => {
+  const handleDelete = async (messageId: number) => {
     if (window.confirm("このメッセージを削除してもよろしいですか？")) {
-      fetch(`http://localhost:3000/groups/${groupId}/messages/${messageId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            return response.text().then((text) => {
-              throw new Error(text);
-            });
+      try {
+        const response = await fetch(
+          `http://localhost:3000/groups/${groupId}/messages/${messageId}`,
+          {
+            method: "DELETE",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
           }
-          console.log("メッセージを削除しました"); // デバッグ用ログ
-          scrollToForm();
-        })
-        .catch((error) => {
-          console.error("削除操作に問題がありました:", error);
-        });
+        );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(text);
+        }
+        console.log("メッセージを削除しました");
+      } catch (error) {
+        console.error("削除操作に問題がありました:", error);
+      }
     }
   };
 
-  // メッセージフォームまでスクロール
-  const scrollToForm = () => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  // グループ情報が読み込まれていない場合のローディング表示
   if (!group) {
     return <div>読み込み中...</div>;
   }
 
   return (
     <div>
-      <h1>{group.name}</h1>
-      <ul>
-        {messages.map((message, index) => {
-          const messageClass =
-            message.sender_name === user?.name ? "left" : "right";
-          return (
-            <li
-              key={`${message.id}-${index}`}
-              className={`message ${messageClass}`}
-            >
-              <div className="content">
-                <strong>{message.sender_name}</strong> ({message.created_at}):{" "}
-                {message.content}
-                {message.sender_name === user?.name && (
-                  <>
-                    <button
-                      onClick={() => handleEdit(message.id, message.content)}
-                    >
-                      編集
-                    </button>
-                    <button
-                      className="delete"
-                      onClick={() => handleDelete(message.id)}
-                    >
-                      削除
-                    </button>
-                  </>
-                )}
-                {message.edited && <span>(編集済)</span>}
-              </div>
-            </li>
-          );
-        })}
-      </ul>
-      <form className="form-container" onSubmit={handleSubmit} ref={formRef}>
-        <input
-          type="text"
-          value={newMessage}
-          onChange={(e) => setNewMessage(e.target.value)}
-          placeholder="メッセージを入力してください..."
+      {messages.length === 0 ? (
+        <div>Loading...</div>
+      ) : (
+        <MessageList
+          messages={messages}
+          handleEdit={handleEdit}
+          handleDelete={handleDelete}
+          user={user}
         />
-        <button type="submit">
-          {editingMessageId !== null ? "更新" : "送信"}
-        </button>
-      </form>
+      )}
+      <MessageForm
+        newMessage={newMessage}
+        setNewMessage={setNewMessage}
+        handleSubmit={handleSubmit}
+        formRef={formRef}
+        inputRef={inputRef}
+      />
     </div>
   );
 };
