@@ -1,42 +1,45 @@
-// frontend/app/src/components/MessageList.tsx
 import React from "react";
-import { DirectMessage, Message } from "../types/componentTypes";
+import { Message, DirectMessage } from "../types/componentTypes";
 
-interface MessageListProps<T> {
-  messages: T[];
+interface MessageListProps {
+  messages: (Message | DirectMessage)[];
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
 }
 
-const MessageList = <
-  T extends {
-    id: number;
-    sender_name: string;
-    created_at: string;
-    content: string;
-    edited?: boolean;
-  }
->({
+const MessageList: React.FC<MessageListProps> = ({
   messages,
   handleEdit,
   handleDelete,
   user,
-}: MessageListProps<T>) => {
+}) => {
   return (
     <ul>
       {messages.map((message, index) => {
-        const messageClass =
-          message.sender_name === user?.name ? "left" : "right";
+        const isDirectMessage = (
+          msg: Message | DirectMessage
+        ): msg is DirectMessage => {
+          return (msg as DirectMessage).recipient_id !== undefined;
+        };
+
+        const senderId = isDirectMessage(message)
+          ? message.sender_id
+          : message.sender_id;
+        const senderName = isDirectMessage(message)
+          ? message.sender_name
+          : message.sender_name;
+        const messageClass = senderId === user?.id ? "left" : "right";
+
         return (
           <li
             key={`${message.id}-${index}`}
             className={`message ${messageClass}`}
           >
             <div className="content">
-              <strong>{message.sender_name}</strong> ({message.created_at}):{" "}
+              <strong>{senderName}</strong> ({message.created_at}):{" "}
               {message.content}
-              {message.sender_name === user?.name && (
+              {senderId === user?.id && (
                 <>
                   <button
                     onClick={() => handleEdit(message.id, message.content)}
@@ -51,7 +54,7 @@ const MessageList = <
                   </button>
                 </>
               )}
-              {message.edited && <span>(編集済)</span>}
+              {"edited" in message && message.edited && <span>(編集済)</span>}
             </div>
           </li>
         );

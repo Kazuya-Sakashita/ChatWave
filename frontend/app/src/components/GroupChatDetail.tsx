@@ -2,15 +2,10 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { useParams } from "react-router-dom";
 import { Group, Message } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
-import {
-  createConsumer,
-  ChannelNameWithParams,
-  Subscription,
-} from "@rails/actioncable";
+import { createConsumer, Subscription } from "@rails/actioncable";
 import MessageList from "./MessageList";
 import MessageForm from "./MessageForm";
 import "../styles/ChatStyles.css";
-import { useMessageContext } from "../context/MessageContext";
 
 const GroupChatDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -18,12 +13,24 @@ const GroupChatDetail: React.FC = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
-  const { user } = useAuth();
-  const { setNewMessages } = useMessageContext();
-  const formRef = useRef<HTMLFormElement | null>(null);
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const { user, isAuthenticated, isLoading } = useAuth();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
-  const clearNewMessages = useCallback(async () => {
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const scrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
+  const clearNewMessages = async () => {
     try {
       const response = await fetch(
         `http://localhost:3000/groups/${groupId}/clear_new_messages`,
@@ -40,20 +47,9 @@ const GroupChatDetail: React.FC = () => {
       }
       const data = await response.json();
       console.log("新着メッセージをクリアしました: ", data);
-
-      setNewMessages((prevNewMessages: { [key: number]: boolean }) => {
-        const updatedNewMessages = { ...prevNewMessages };
-        delete updatedNewMessages[Number(groupId)];
-        return updatedNewMessages;
-      });
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
-  }, [groupId, setNewMessages]);
-
-  const scrollToForm = () => {
-    formRef.current?.scrollIntoView({ behavior: "smooth" });
-    inputRef.current?.focus();
   };
 
   const fetchGroupData = useCallback(async () => {
@@ -71,7 +67,6 @@ const GroupChatDetail: React.FC = () => {
       const data = await response.json();
       setGroup(data.group);
       setMessages(data.messages);
-      console.log("グループとメッセージを取得しました: ", data);
       if (data.group.new_messages) {
         await clearNewMessages();
       }
@@ -79,18 +74,23 @@ const GroupChatDetail: React.FC = () => {
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
-  }, [groupId, clearNewMessages]);
+  }, [groupId]);
 
   useEffect(() => {
+    if (isLoading) return;
+
+    if (!isAuthenticated || !user || !groupId) {
+      console.error("Authentication status, user, or groupId is missing:", {
+        isAuthenticated,
+        user,
+        groupId,
+      });
+      return;
+    }
+
     fetchGroupData();
 
     const cable = createConsumer("ws://localhost:3000/cable");
-
-    const channelParams: ChannelNameWithParams = {
-      channel: "MessageChannel",
-      chat_room_type: "group",
-      chat_room_id: groupId,
-    };
 
     const subscription: Partial<Subscription> = {
       received(data: {
@@ -98,8 +98,6 @@ const GroupChatDetail: React.FC = () => {
         message_id?: number;
         action?: string;
       }) {
-        console.log("メッセージを受信しました: ", data);
-
         if (data.action === "delete" && data.message_id) {
           setMessages((prevMessages) =>
             prevMessages.filter((message) => message.id !== data.message_id)
@@ -118,7 +116,6 @@ const GroupChatDetail: React.FC = () => {
             }
           });
         }
-        clearNewMessages();
         scrollToForm();
       },
       connected() {
@@ -130,14 +127,18 @@ const GroupChatDetail: React.FC = () => {
     };
 
     const channel = cable.subscriptions.create(
-      channelParams,
+      {
+        channel: "MessageChannel",
+        chat_room_type: "group",
+        chat_room_id: groupId,
+      },
       subscription as Subscription
     );
 
     return () => {
       channel.unsubscribe();
     };
-  }, [groupId, fetchGroupData, clearNewMessages]);
+  }, [fetchGroupData, isAuthenticated, isLoading, user, groupId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -229,22 +230,23 @@ const GroupChatDetail: React.FC = () => {
     }
   };
 
-  if (!group) {
-    return <div>読み込み中...</div>;
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (!isAuthenticated || !user || !groupId) {
+    return <div>Loading...</div>;
   }
 
   return (
     <div>
-      {messages.length === 0 ? (
-        <div>Loading...</div>
-      ) : (
-        <MessageList
-          messages={messages}
-          handleEdit={handleEdit}
-          handleDelete={handleDelete}
-          user={user}
-        />
-      )}
+      <h1>{group?.name}</h1>
+      <MessageList
+        messages={messages}
+        handleEdit={handleEdit}
+        handleDelete={handleDelete}
+        user={user}
+      />
       <MessageForm
         newMessage={newMessage}
         setNewMessage={setNewMessage}
@@ -252,6 +254,7 @@ const GroupChatDetail: React.FC = () => {
         formRef={formRef}
         inputRef={inputRef}
       />
+      <div ref={messagesEndRef} />
     </div>
   );
 };
