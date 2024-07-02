@@ -55,6 +55,7 @@ export type DirectMessage = {
   sender_name: string; // 送信者の名前
   recipient_name: string; // 受信者の名前
   created_at: string; // 作成日時
+  edited?: boolean; // 編集されたかどうか
 };
 
 // Message型を定義
@@ -86,13 +87,7 @@ export interface NewMessagesResponse {
   new_messages: number[]; // 新着メッセージのグループIDのリスト
 }
 
-// ErrorMessageコンポーネントのプロパティの型を定義（stringまたはnull）
-export interface ErrorMessageProps {
-  message: string | null;
-}
-
-// src/types/componentTypes.ts
-
+// MessageContextPropsの型を定義
 export interface MessageContextProps {
   newMessages: { [key: number]: boolean };
   setNewMessages: React.Dispatch<
@@ -100,6 +95,7 @@ export interface MessageContextProps {
   >;
 }
 
+// MessageProviderPropsの型を定義
 export interface MessageProviderProps {
   children: React.ReactNode; // childrenの型を追加
 }

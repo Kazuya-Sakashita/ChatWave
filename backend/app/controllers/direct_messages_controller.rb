@@ -1,6 +1,7 @@
 class DirectMessagesController < ApplicationController
   before_action :authenticate_user!
   before_action :set_recipient, only: [:create]
+  before_action :set_direct_message, only: [:destroy, :update]
 
   def index
     direct_messages = DirectMessage.where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
@@ -40,6 +41,23 @@ class DirectMessagesController < ApplicationController
     end
   end
 
+  def update
+    if @direct_message.update(direct_message_params)
+      ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message), action: "update" }
+      ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message), action: "update" }
+      render json: @direct_message
+    else
+      render json: @direct_message.errors, status: :unprocessable_entity
+    end
+  end
+
+  def destroy
+    @direct_message.destroy
+    ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message), action: "delete" }
+    ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message), action: "delete" }
+    head :no_content
+  end
+
   private
 
   def direct_message_params
@@ -50,6 +68,12 @@ class DirectMessagesController < ApplicationController
     @recipient = User.find(params[:direct_message][:recipient_id])
   rescue ActiveRecord::RecordNotFound
     render json: { errors: ["Recipient not found"] }, status: :not_found
+  end
+
+  def set_direct_message
+    @direct_message = DirectMessage.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    render json: { errors: ["Direct message not found"] }, status: :not_found
   end
 
   def format_direct_message(direct_message)
