@@ -109,7 +109,8 @@ class GroupsController < ApplicationController
       sender_id: message.sender_id,
       content: message.content,
       sender_name: message.sender.name,
-      created_at: message.created_at.strftime("%Y-%m-%d %H:%M")
+      created_at: message.created_at.strftime("%Y-%m-%d %H:%M"),
+      edited: message.updated_at > message.created_at # 追加部分
     }
   end
 
