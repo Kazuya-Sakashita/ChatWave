@@ -91,8 +91,13 @@ const DirectMessageDetail: React.FC = () => {
             return prevMessages.map((msg) =>
               msg.id === data.direct_message.id ? data.direct_message : msg
             );
+          } else if (
+            data.action === "create" &&
+            !prevMessages.find((msg) => msg.id === data.direct_message.id)
+          ) {
+            return [...prevMessages, data.direct_message];
           }
-          return [...prevMessages, data.direct_message];
+          return prevMessages;
         });
         scrollToForm();
       },
