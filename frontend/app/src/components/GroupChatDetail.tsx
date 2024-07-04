@@ -6,6 +6,7 @@ import { createConsumer, Subscription } from "@rails/actioncable";
 import MessageList from "./MessageList";
 import MessageForm from "./MessageForm";
 import "../styles/ChatStyles.css";
+import { useMessageContext } from "../context/MessageContext"; // 新着メッセージのコンテキストをインポート
 
 const GroupChatDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -17,20 +18,10 @@ const GroupChatDetail: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { setNewMessages } = useMessageContext(); // 新着メッセージを更新するためのコンテキストフック
 
-  const scrollToBottom = () => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const scrollToForm = () => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  };
-
-  const clearNewMessages = async () => {
+  // 新着メッセージをクリアする関数
+  const clearNewMessages = useCallback(async () => {
     try {
       const response = await fetch(
         `http://localhost:3000/groups/${groupId}/clear_new_messages`,
@@ -47,11 +38,26 @@ const GroupChatDetail: React.FC = () => {
       }
       const data = await response.json();
       console.log("新着メッセージをクリアしました: ", data);
+
+      // 新着メッセージの状態を更新
+      setNewMessages((prevNewMessages) => {
+        const updatedNewMessages = { ...prevNewMessages };
+        delete updatedNewMessages[Number(groupId)];
+        return updatedNewMessages;
+      });
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
+  }, [groupId, setNewMessages]);
+
+  // メッセージリストの末尾にスクロールする関数
+  const scrollToForm = () => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth" });
+    }
   };
 
+  // メッセージを取得するための関数
   const fetchGroupData = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:3000/groups/${groupId}`, {
@@ -74,7 +80,7 @@ const GroupChatDetail: React.FC = () => {
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
-  }, [groupId]);
+  }, [groupId, clearNewMessages]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -115,6 +121,8 @@ const GroupChatDetail: React.FC = () => {
               return [...prevMessages, data.message];
             }
           });
+          // 新しいメッセージを受信したら新着メッセージをクリア
+          clearNewMessages();
         }
         scrollToForm();
       },
@@ -138,8 +146,16 @@ const GroupChatDetail: React.FC = () => {
     return () => {
       channel.unsubscribe();
     };
-  }, [fetchGroupData, isAuthenticated, isLoading, user, groupId]);
+  }, [
+    fetchGroupData,
+    isAuthenticated,
+    isLoading,
+    user,
+    groupId,
+    clearNewMessages,
+  ]);
 
+  // メッセージ送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -200,12 +216,14 @@ const GroupChatDetail: React.FC = () => {
     }
   };
 
+  // メッセージ編集時の処理
   const handleEdit = (messageId: number, currentContent: string) => {
     setEditingMessageId(messageId);
     setNewMessage(currentContent);
     scrollToForm();
   };
 
+  // メッセージ削除時の処理
   const handleDelete = async (messageId: number) => {
     if (window.confirm("このメッセージを削除してもよろしいですか？")) {
       try {
@@ -251,8 +269,13 @@ const GroupChatDetail: React.FC = () => {
         newMessage={newMessage}
         setNewMessage={setNewMessage}
         handleSubmit={handleSubmit}
+        handleCancel={() => {
+          setEditingMessageId(null);
+          setNewMessage("");
+        }}
         formRef={formRef}
         inputRef={inputRef}
+        editingMessageId={editingMessageId}
       />
       <div ref={messagesEndRef} />
     </div>

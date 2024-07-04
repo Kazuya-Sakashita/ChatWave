@@ -7,15 +7,7 @@ class DirectMessagesController < ApplicationController
     direct_messages = DirectMessage.where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
                                    .includes(:sender, :recipient)
     direct_messages_with_usernames = direct_messages.map do |dm|
-      {
-        id: dm.id,
-        sender_id: dm.sender_id,
-        recipient_id: dm.recipient_id,
-        content: dm.content,
-        sender_name: dm.sender.name,
-        recipient_name: dm.recipient.name,
-        created_at: dm.created_at.strftime("%Y-%m-%d %H:%M")
-      }
+      format_direct_message(dm)
     end
     render json: { direct_messages: direct_messages_with_usernames }
   end
@@ -33,9 +25,8 @@ class DirectMessagesController < ApplicationController
   def create
     @direct_message = current_user.sent_direct_messages.new(direct_message_params)
     if @direct_message.save
-      ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message) }
-      ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message) }
-      render json: @direct_message, status: :created
+      broadcast_message(@direct_message, "create")
+      render json: { direct_message: format_direct_message(@direct_message) }, status: :created
     else
       render json: @direct_message.errors, status: :unprocessable_entity
     end
@@ -43,19 +34,20 @@ class DirectMessagesController < ApplicationController
 
   def update
     if @direct_message.update(direct_message_params)
-      ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message), action: "update" }
-      ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message), action: "update" }
-      render json: @direct_message
+      broadcast_message(@direct_message, "update")
+      render json: { direct_message: format_direct_message(@direct_message) }
     else
       render json: @direct_message.errors, status: :unprocessable_entity
     end
   end
 
   def destroy
-    @direct_message.destroy
-    ActionCable.server.broadcast "direct_messages:#{@direct_message.recipient_id}", { direct_message: format_direct_message(@direct_message), action: "delete" }
-    ActionCable.server.broadcast "direct_messages:#{current_user.id}", { direct_message: format_direct_message(@direct_message), action: "delete" }
-    head :no_content
+    if @direct_message.destroy
+      broadcast_message(@direct_message, "delete")
+      head :no_content
+    else
+      render json: @direct_message.errors, status: :unprocessable_entity
+    end
   end
 
   private
@@ -84,7 +76,13 @@ class DirectMessagesController < ApplicationController
       content: direct_message.content,
       sender_name: direct_message.sender.name,
       recipient_name: direct_message.recipient.name,
-      created_at: direct_message.created_at.strftime("%Y-%m-%d %H:%M")
+      created_at: direct_message.created_at.strftime("%Y-%m-%d %H:%M"),
+      edited: direct_message.updated_at > direct_message.created_at
     }
+  end
+
+  def broadcast_message(message, action)
+    ActionCable.server.broadcast "direct_messages:#{message.recipient_id}", { direct_message: format_direct_message(message), action: action }
+    ActionCable.server.broadcast "direct_messages:#{message.sender_id}", { direct_message: format_direct_message(message), action: action }
   end
 end

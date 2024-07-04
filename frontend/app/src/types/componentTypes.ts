@@ -99,3 +99,11 @@ export interface MessageContextProps {
 export interface MessageProviderProps {
   children: React.ReactNode; // childrenの型を追加
 }
+
+// MessageListPropsの型を定義
+export interface MessageListProps {
+  messages: (Message | DirectMessage)[];
+  handleEdit: (messageId: number, currentContent: string) => void;
+  handleDelete: (messageId: number) => void;
+  user: any; // ユーザーの型定義
+}

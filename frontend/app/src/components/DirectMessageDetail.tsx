@@ -11,6 +11,7 @@ const DirectMessageDetail: React.FC = () => {
   const { messageId } = useParams<{ messageId: string }>();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [newMessage, setNewMessage] = useState("");
+  const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const { user, isAuthenticated, isLoading } = useAuth();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -45,7 +46,12 @@ const DirectMessageDetail: React.FC = () => {
         throw new Error(`Network response was not ok: ${response.statusText}`);
       }
       const data = await response.json();
-      setMessages(data.direct_messages || []);
+      console.log("Fetched messages:", data.direct_messages);
+      const filteredMessages = data.direct_messages.filter(
+        (msg: DirectMessage) =>
+          msg && msg.content !== undefined && msg.content !== null
+      );
+      setMessages(filteredMessages);
       scrollToBottom();
     } catch (error) {
       console.error("There was a problem with the fetch operation:", error);
@@ -70,9 +76,24 @@ const DirectMessageDetail: React.FC = () => {
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const subscription: Partial<Subscription> = {
-      received(data: { direct_message: DirectMessage }) {
+      received(data: { direct_message: DirectMessage; action?: string }) {
         console.log("Received message via WebSocket:", data);
-        setMessages((prevMessages) => [...prevMessages, data.direct_message]);
+        if (!data.direct_message || !data.direct_message.content) {
+          console.error("Received invalid message:", data);
+          return;
+        }
+        setMessages((prevMessages) => {
+          if (data.action === "delete") {
+            return prevMessages.filter(
+              (msg) => msg.id !== data.direct_message.id
+            );
+          } else if (data.action === "update") {
+            return prevMessages.map((msg) =>
+              msg.id === data.direct_message.id ? data.direct_message : msg
+            );
+          }
+          return [...prevMessages, data.direct_message];
+        });
         scrollToForm();
       },
       connected() {
@@ -103,84 +124,97 @@ const DirectMessageDetail: React.FC = () => {
       return;
     }
 
-    if (messages.length === 0) {
-      console.error("メッセージが利用できないため、受信者IDを判断できません。");
-      return;
-    }
-
-    const recipientId =
-      messages[0].recipient_id === user?.id
-        ? messages[0].sender_id
-        : messages[0].recipient_id;
-
-    try {
-      const response = await fetch("http://localhost:3000/direct_messages", {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          direct_message: {
-            recipient_id: recipientId,
-            content: newMessage,
-          },
-        }),
-      });
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(
-          `Network response was not ok: ${response.statusText}\n${text}`
+    if (editingMessageId !== null) {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/direct_messages/${editingMessageId}`,
+          {
+            method: "PUT",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              direct_message: {
+                content: newMessage,
+              },
+            }),
+          }
         );
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(
+            `Network response was not ok: ${response.statusText}\n${text}`
+          );
+        }
+        const data = await response.json();
+        console.log("Updated message:", data);
+        setMessages((prevMessages) =>
+          prevMessages.map((msg) =>
+            msg.id === editingMessageId
+              ? { ...msg, content: data.direct_message.content, edited: true }
+              : msg
+          )
+        );
+        setEditingMessageId(null);
+        setNewMessage("");
+        scrollToBottom();
+      } catch (error) {
+        console.error("メッセージの編集に問題が発生しました:", error);
       }
-      const data = await response.json();
-      console.log("メッセージが送信されました:", data);
-      setMessages((prevMessages) => [...prevMessages, data.direct_message]);
-      setNewMessage("");
-      scrollToBottom();
-    } catch (error) {
-      console.error("フェッチ操作に問題が発生しました:", error);
-    }
-  };
+    } else {
+      if (messages.length === 0) {
+        console.error(
+          "メッセージが利用できないため、受信者IDを判断できません。"
+        );
+        return;
+      }
 
-  const handleEdit = async (messageId: number, currentContent: string) => {
-    setNewMessage(currentContent);
-    inputRef.current?.focus();
+      const recipientId =
+        messages[0].recipient_id === user?.id
+          ? messages[0].sender_id
+          : messages[0].recipient_id;
 
-    try {
-      const response = await fetch(
-        `http://localhost:3000/direct_messages/${messageId}`,
-        {
-          method: "PUT",
+      try {
+        const response = await fetch("http://localhost:3000/direct_messages", {
+          method: "POST",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
             direct_message: {
+              recipient_id: recipientId,
               content: newMessage,
             },
           }),
+        });
+        if (!response.ok) {
+          const text = await response.text();
+          throw new Error(
+            `Network response was not ok: ${response.statusText}\n${text}`
+          );
         }
-      );
-      if (!response.ok) {
-        const text = await response.text();
-        throw new Error(
-          `Network response was not ok: ${response.statusText}\n${text}`
-        );
+        const data = await response.json();
+        console.log("メッセージが送信されました:", data);
+        setMessages((prevMessages) => [...prevMessages, data.direct_message]);
+        setNewMessage("");
+        scrollToBottom();
+      } catch (error) {
+        console.error("フェッチ操作に問題が発生しました:", error);
       }
-      const data = await response.json();
-      setMessages((prevMessages) =>
-        prevMessages.map((msg) =>
-          msg.id === messageId
-            ? { ...msg, content: data.direct_message.content }
-            : msg
-        )
-      );
-      setNewMessage("");
-    } catch (error) {
-      console.error("メッセージの編集に問題が発生しました:", error);
     }
+  };
+
+  const handleEdit = (messageId: number, currentContent: string) => {
+    setEditingMessageId(messageId);
+    setNewMessage(currentContent);
+    inputRef.current?.focus();
+  };
+
+  const handleCancel = () => {
+    setEditingMessageId(null);
+    setNewMessage("");
   };
 
   const handleDelete = async (messageId: number) => {
@@ -231,8 +265,10 @@ const DirectMessageDetail: React.FC = () => {
         newMessage={newMessage}
         setNewMessage={setNewMessage}
         handleSubmit={handleSubmit}
+        handleCancel={handleCancel}
         formRef={formRef}
         inputRef={inputRef}
+        editingMessageId={editingMessageId}
       />
       <div ref={messagesEndRef} />
     </div>
