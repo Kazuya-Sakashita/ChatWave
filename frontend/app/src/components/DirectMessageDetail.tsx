@@ -202,7 +202,6 @@ const DirectMessageDetail: React.FC = () => {
         }
         const data = await response.json();
         console.log("メッセージが送信されました:", data);
-        setMessages((prevMessages) => [...prevMessages, data.direct_message]);
         setNewMessage("");
         scrollToBottom();
       } catch (error) {
