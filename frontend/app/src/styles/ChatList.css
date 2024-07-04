@@ -50,3 +50,29 @@
   font-size: 12px;
   vertical-align: middle; /* バッジをテキストと垂直方向に中央揃え */
 }
+
+.update-button {
+  background-color: #4caf50; /* 緑色 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.update-button:hover {
+  background-color: #45a049;
+}
+
+.cancel-button {
+  background-color: #f44336; /* 赤色 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin: 5px;
+  cursor: pointer;
+}
+
+.cancel-button:hover {
+  background-color: #da190b;
+}

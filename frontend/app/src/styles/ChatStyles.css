@@ -39,19 +39,6 @@
   margin-right: 10px;
 }
 
-.form-container button {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  background-color: #4caf50;
-  color: white;
-  cursor: pointer;
-}
-
-.form-container button:hover {
-  background-color: #45a049;
-}
-
 /* メッセージのアクションボタンのスタイル */
 .message {
   display: flex;

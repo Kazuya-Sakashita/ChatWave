@@ -1,4 +1,5 @@
 import React from "react";
+import "../styles/ChatStyles.css";
 
 interface MessageFormProps {
   newMessage: string;
@@ -28,11 +29,11 @@ const MessageForm: React.FC<MessageFormProps> = ({
         placeholder="メッセージを入力してください..."
         ref={inputRef} // 入力フィールドの参照を設定
       />
-      <button type="submit">
+      <button type="submit" className="update-button">
         {editingMessageId !== null ? "更新" : "送信"}
       </button>
       {editingMessageId !== null && (
-        <button type="button" onClick={handleCancel}>
+        <button type="button" onClick={handleCancel} className="cancel-button">
           キャンセル
         </button>
       )}
