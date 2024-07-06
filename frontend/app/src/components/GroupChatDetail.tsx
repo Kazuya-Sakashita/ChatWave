@@ -223,6 +223,11 @@ const GroupChatDetail: React.FC = () => {
     scrollToForm();
   };
 
+  const handleCancel = () => {
+    setEditingMessageId(null);
+    setNewMessage("");
+  };
+
   // メッセージ削除時の処理
   const handleDelete = async (messageId: number) => {
     if (window.confirm("このメッセージを削除してもよろしいですか？")) {
@@ -269,10 +274,7 @@ const GroupChatDetail: React.FC = () => {
         newMessage={newMessage}
         setNewMessage={setNewMessage}
         handleSubmit={handleSubmit}
-        handleCancel={() => {
-          setEditingMessageId(null);
-          setNewMessage("");
-        }}
+        handleCancel={handleCancel}
         formRef={formRef}
         inputRef={inputRef}
         editingMessageId={editingMessageId}
