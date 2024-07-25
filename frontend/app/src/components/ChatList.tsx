@@ -1,7 +1,5 @@
-// src/components/ChatList.tsx
-
-import React, { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import React, { useEffect, useState, useCallback } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Group, DirectMessage } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
 import "../styles/ChatList.css";
@@ -10,64 +8,70 @@ import {
   ChannelNameWithParams,
   Subscription,
 } from "@rails/actioncable";
-import { useMessageContext } from "../context/MessageContext"; // MessageContextをインポートして使用
+import { useMessageContext } from "../context/MessageContext";
 
 const ChatList: React.FC = () => {
-  const [groups, setGroups] = useState<Group[]>([]); // グループチャットのリストを保持する状態
-  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]); // ダイレクトメッセージのリストを保持する状態
-  const { user } = useAuth(); // 現在のユーザー情報を取得
-  const { newMessages, setNewMessages } = useMessageContext(); // 新しいメッセージのフラグを管理するコンテキスト
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [directMessages, setDirectMessages] = useState<DirectMessage[]>([]);
+  const { user } = useAuth();
+  const {
+    newMessages,
+    setNewMessages,
+    newDirectMessages,
+    setNewDirectMessages,
+  } = useMessageContext();
+  const navigate = useNavigate();
 
-  useEffect(() => {
-    // チャットデータをフェッチする関数
-    const fetchChats = async () => {
-      try {
-        const response = await fetch("http://localhost:3000/chats", {
+  // グループチャットとダイレクトメッセージのリストを取得する関数
+  const fetchChats = useCallback(async () => {
+    try {
+      const response = await fetch("http://localhost:3000/chats", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("ネットワーク応答が正常ではありません");
+      }
+      const data = await response.json();
+      setGroups(data.groups);
+      setDirectMessages(data.direct_messages);
+    } catch (error) {
+      console.error("フェッチ操作に問題が発生しました:", error);
+    }
+  }, []);
+
+  // 新着メッセージのリストを取得する関数
+  const fetchNewMessages = useCallback(async () => {
+    try {
+      const response = await fetch(
+        "http://localhost:3000/direct_messages/new_messages",
+        {
           method: "GET",
           credentials: "include",
           headers: {
             "Content-Type": "application/json",
           },
-        });
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
         }
-        const data = await response.json();
-        setGroups(data.groups); // グループチャットのデータを状態にセット
-        setDirectMessages(data.direct_messages); // ダイレクトメッセージのデータを状態にセット
-      } catch (error) {
-        console.error("There was a problem with the fetch operation:", error);
+      );
+      if (!response.ok) {
+        throw new Error("ネットワーク応答が正常ではありません");
       }
-    };
+      const newMessagesResponse = await response.json();
+      setNewDirectMessages(newMessagesResponse.new_messages);
+    } catch (error) {
+      console.error("フェッチ操作に問題が発生しました:", error);
+    }
+  }, [setNewDirectMessages]);
 
-    // 新しいメッセージのフラグをフェッチする関数
-    const fetchNewMessages = async () => {
-      try {
-        const response = await fetch(
-          "http://localhost:3000/groups/new_messages",
-          {
-            method: "GET",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-        const newMessagesResponse = await response.json();
-        console.log("New messages response: ", newMessagesResponse); // デバッグ用ログ
-        setNewMessages(newMessagesResponse.new_messages); // 新しいメッセージのフラグを状態にセット
-      } catch (error) {
-        console.error("There was a problem with the fetch operation:", error);
-      }
-    };
-
+  // 初回ロード時にチャットリストと新着メッセージを取得し、WebSocketを設定する
+  useEffect(() => {
     fetchChats();
     fetchNewMessages();
 
-    // Action Cableの設定
+    // WebSocket接続の設定
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const channelParams: ChannelNameWithParams = {
@@ -75,20 +79,25 @@ const ChatList: React.FC = () => {
     };
 
     const subscription: Partial<Subscription> = {
-      received(data: { group_id: number; sender_id: number }) {
-        console.log("Received new message notification: ", data); // デバッグ用ログ
-        if (data.sender_id !== user?.id) {
+      received(data: { group_id?: number; sender_id: number }) {
+        console.log("新着メッセージ通知を受信:", data);
+        if (data.group_id !== undefined) {
           setNewMessages((prevNewMessages) => ({
             ...prevNewMessages,
-            [data.group_id]: true, // 新しいメッセージのフラグを更新
+            [data.group_id!]: true,
+          }));
+        } else {
+          setNewDirectMessages((prevNewMessages) => ({
+            ...prevNewMessages,
+            [data.sender_id]: true,
           }));
         }
       },
       connected() {
-        console.log("Connected to the NewMessageNotificationChannel");
+        console.log("NewMessageNotificationChannelに接続されました");
       },
       disconnected() {
-        console.log("Disconnected from the NewMessageNotificationChannel");
+        console.log("NewMessageNotificationChannelから切断されました");
       },
     };
 
@@ -98,16 +107,17 @@ const ChatList: React.FC = () => {
     );
 
     return () => {
-      channel.unsubscribe(); // コンポーネントがアンマウントされたときにサブスクリプションを解除
+      channel.unsubscribe();
     };
-  }, [user, setNewMessages]);
+  }, [
+    fetchChats,
+    fetchNewMessages,
+    user,
+    setNewMessages,
+    setNewDirectMessages,
+  ]);
 
-  // ダイレクトメッセージの相手の名前を取得する関数
-  const getChatPartnerName = (dm: DirectMessage) => {
-    return dm.sender_id === user?.id ? dm.recipient_name : dm.sender_name;
-  };
-
-  // グループチャットをクリックしたときに新しいメッセージのフラグをクリアする関数
+  // グループチャットをクリックしたときに新着メッセージをクリアする関数
   const handleGroupClick = async (groupId: number) => {
     try {
       if (newMessages[groupId]) {
@@ -122,23 +132,55 @@ const ChatList: React.FC = () => {
           }
         );
         if (!response.ok) {
-          throw new Error("Failed to clear new messages");
+          throw new Error("新着メッセージのクリアに失敗しました");
         }
         setNewMessages((prevNewMessages) => {
           const updatedNewMessages = { ...prevNewMessages };
-          delete updatedNewMessages[groupId]; // 新しいメッセージのフラグをクリア
+          delete updatedNewMessages[groupId];
           return updatedNewMessages;
         });
-        console.log(`Cleared new messages for group ${groupId}`); // デバッグ用ログ
       }
     } catch (error) {
-      console.error("Failed to clear new messages:", error);
+      console.error("新着メッセージのクリアに失敗しました:", error);
     }
   };
 
-  // 重複しない相手とのダイレクトメッセージを保持
-  const uniqueChatPartners = new Map<number, DirectMessage>();
+  // ダイレクトメッセージをクリックしたときに新着メッセージをクリアする関数
+  const handleDirectMessageClick = async (senderId: number) => {
+    try {
+      if (newDirectMessages[senderId]) {
+        const response = await fetch(
+          `http://localhost:3000/direct_messages/clear_new_messages?sender_id=${senderId}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error("新着メッセージのクリアに失敗しました");
+        }
+        setNewDirectMessages((prevNewMessages) => {
+          const updatedNewMessages = { ...prevNewMessages };
+          delete updatedNewMessages[senderId];
+          return updatedNewMessages;
+        });
+      }
+      navigate(`/direct_messages/${senderId}`);
+    } catch (error) {
+      console.error("新着メッセージのクリアに失敗しました:", error);
+    }
+  };
 
+  // チャットパートナーの名前を取得する関数
+  const getChatPartnerName = (dm: DirectMessage) => {
+    return dm.sender_id === user?.id ? dm.recipient_name : dm.sender_name;
+  };
+
+  // ユニークなチャットパートナーを取得する
+  const uniqueChatPartners = new Map<number, DirectMessage>();
   directMessages.forEach((dm) => {
     const partnerId =
       dm.sender_id === user?.id ? dm.recipient_id : dm.sender_id;
@@ -147,10 +189,11 @@ const ChatList: React.FC = () => {
     }
   });
 
+  // チャットリストの表示
   return (
     <div className="chat-list-container">
-      <h1>Chat List</h1>
-      <h2>Group Chats</h2>
+      <h1>チャットリスト</h1>
+      <h2>グループチャット</h2>
       <ul className="chat-list">
         {groups.map((group) => (
           <li key={group.id}>
@@ -164,12 +207,22 @@ const ChatList: React.FC = () => {
           </li>
         ))}
       </ul>
-      <h2>Direct Chats</h2>
+      <h2>ダイレクトチャット</h2>
       <ul className="chat-list">
         {Array.from(uniqueChatPartners.values()).map((dm) => (
           <li key={dm.id}>
-            <Link to={`/direct_messages/${dm.id}`}>
-              {getChatPartnerName(dm)}
+            <Link
+              to={`/direct_messages/${dm.id}`}
+              onClick={() =>
+                handleDirectMessageClick(
+                  dm.sender_id === user?.id ? dm.recipient_id : dm.sender_id
+                )
+              }
+            >
+              {getChatPartnerName(dm)}{" "}
+              {newDirectMessages[
+                dm.sender_id === user?.id ? dm.recipient_id : dm.sender_id
+              ] && <span className="new-badge">NEW</span>}
             </Link>
           </li>
         ))}

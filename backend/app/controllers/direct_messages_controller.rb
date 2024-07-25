@@ -25,16 +25,43 @@ class DirectMessagesController < ApplicationController
   def create
     @direct_message = current_user.sent_direct_messages.new(direct_message_params)
     if @direct_message.save
-      broadcast_message(@direct_message, "create")
+      set_new_message_flag_for_direct(@direct_message)
+      broadcast_new_message(@direct_message)
       render json: { direct_message: format_direct_message(@direct_message) }, status: :created
     else
       render json: @direct_message.errors, status: :unprocessable_entity
     end
   end
 
+  def new_messages
+    user_id = current_user.id
+    direct_new_messages = {}
+
+    DirectMessage.where("sender_id = ? OR recipient_id = ?", user_id, user_id).find_each do |dm|
+      key = "direct:#{dm.id}:new_messages"
+      if redis.hexists(key, user_id)
+        direct_new_messages[dm.sender_id == user_id ? dm.recipient_id : dm.sender_id] = true
+      end
+    end
+
+    render json: { new_messages: direct_new_messages }
+  end
+
+  def clear_new_messages
+    sender_id = params[:sender_id]
+    recipient_id = current_user.id
+
+    begin
+      redis.hdel("direct:#{sender_id}:new_messages", recipient_id)
+      render json: { message: 'New messages cleared' }, status: :ok
+    rescue => e
+      render json: { error: 'Failed to clear new messages' }, status: :internal_server_error
+    end
+  end
+
   def update
     if @direct_message.update(direct_message_params)
-      broadcast_message(@direct_message, "update")
+      broadcast_new_message(@direct_message, "update")
       render json: { direct_message: format_direct_message(@direct_message) }
     else
       render json: @direct_message.errors, status: :unprocessable_entity
@@ -43,7 +70,7 @@ class DirectMessagesController < ApplicationController
 
   def destroy
     if @direct_message.destroy
-      broadcast_message(@direct_message, "delete")
+      broadcast_new_message(@direct_message, "delete")
       head :no_content
     else
       render json: @direct_message.errors, status: :unprocessable_entity
@@ -81,8 +108,20 @@ class DirectMessagesController < ApplicationController
     }
   end
 
-  def broadcast_message(message, action)
+  def broadcast_new_message(message, action = "create")
+    recipient_stream = "new_message_notifications_#{message.recipient_id}"
+    sender_stream = "new_message_notifications_#{message.sender_id}"
+    ActionCable.server.broadcast recipient_stream, { sender_id: message.sender_id }
+    ActionCable.server.broadcast sender_stream, { sender_id: message.sender_id }
     ActionCable.server.broadcast "direct_messages:#{message.recipient_id}", { direct_message: format_direct_message(message), action: action }
     ActionCable.server.broadcast "direct_messages:#{message.sender_id}", { direct_message: format_direct_message(message), action: action }
+  end
+
+  def set_new_message_flag_for_direct(message)
+    redis.hset("direct:#{message.sender_id}:new_messages", message.recipient_id, "1")
+  end
+
+  def redis
+    @redis ||= Redis.new
   end
 end

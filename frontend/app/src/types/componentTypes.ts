@@ -93,11 +93,14 @@ export interface MessageContextProps {
   setNewMessages: React.Dispatch<
     React.SetStateAction<{ [key: number]: boolean }>
   >;
+  newDirectMessages: { [key: number]: boolean }; // 追加
+  setNewDirectMessages: React.Dispatch<
+    React.SetStateAction<{ [key: number]: boolean }>
+  >; // 追加
 }
 
-// MessageProviderPropsの型を定義
 export interface MessageProviderProps {
-  children: React.ReactNode; // childrenの型を追加
+  children: React.ReactNode;
 }
 
 // MessageListPropsの型を定義

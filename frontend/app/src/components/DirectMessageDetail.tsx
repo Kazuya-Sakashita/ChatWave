@@ -6,6 +6,7 @@ import "../styles/ChatStyles.css";
 import { createConsumer, Subscription } from "@rails/actioncable";
 import MessageList from "./MessageList";
 import MessageForm from "./MessageForm";
+import { useMessageContext } from "../context/MessageContext";
 
 const DirectMessageDetail: React.FC = () => {
   const { messageId } = useParams<{ messageId: string }>();
@@ -16,6 +17,7 @@ const DirectMessageDetail: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const { setNewDirectMessages } = useMessageContext();
 
   const scrollToBottom = () => {
     if (messagesEndRef.current) {
@@ -43,31 +45,67 @@ const DirectMessageDetail: React.FC = () => {
         }
       );
       if (!response.ok) {
-        throw new Error(`Network response was not ok: ${response.statusText}`);
+        throw new Error(
+          `ネットワーク応答が正常ではありません: ${response.statusText}`
+        );
       }
       const data = await response.json();
-      console.log("Fetched messages:", data.direct_messages);
+      console.log("取得したメッセージ:", data.direct_messages);
       const filteredMessages = data.direct_messages.filter(
         (msg: DirectMessage) =>
           msg && msg.content !== undefined && msg.content !== null
       );
       setMessages(filteredMessages);
       scrollToBottom();
+      // 新着メッセージフラグをクリアする
+      setNewDirectMessages((prevNewMessages) => {
+        const updatedNewMessages = { ...prevNewMessages };
+        delete updatedNewMessages[Number(messageId)];
+        return updatedNewMessages;
+      });
     } catch (error) {
-      console.error("There was a problem with the fetch operation:", error);
+      console.error("フェッチ操作に問題が発生しました:", error);
       setMessages([]);
     }
-  }, [messageId]);
+  }, [messageId, setNewDirectMessages]);
+
+  const clearNewMessageFlag = async (senderId: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/direct_messages/clear_new_messages?sender_id=${senderId}`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!response.ok) {
+        throw new Error("新着メッセージのクリアに失敗しました");
+      }
+      setNewDirectMessages((prevNewMessages) => {
+        const updatedNewMessages = { ...prevNewMessages };
+        delete updatedNewMessages[senderId];
+        return updatedNewMessages;
+      });
+    } catch (error) {
+      console.error("新着メッセージのクリアに失敗しました:", error);
+    }
+  };
 
   useEffect(() => {
     if (isLoading) return;
 
     if (!isAuthenticated || !user || !messageId) {
-      console.error("Authentication status, user, or messageId is missing:", {
-        isAuthenticated,
-        user,
-        messageId,
-      });
+      console.error(
+        "認証ステータス、ユーザー、またはメッセージIDが欠落しています:",
+        {
+          isAuthenticated,
+          user,
+          messageId,
+        }
+      );
       return;
     }
 
@@ -77,9 +115,9 @@ const DirectMessageDetail: React.FC = () => {
 
     const subscription: Partial<Subscription> = {
       received(data: { direct_message: DirectMessage; action?: string }) {
-        console.log("Received message via WebSocket:", data);
+        console.log("WebSocket経由でメッセージを受信:", data);
         if (!data.direct_message || !data.direct_message.content) {
-          console.error("Received invalid message:", data);
+          console.error("無効なメッセージを受信しました:", data);
           return;
         }
         setMessages((prevMessages) => {
@@ -100,12 +138,14 @@ const DirectMessageDetail: React.FC = () => {
           return prevMessages;
         });
         scrollToForm();
+        // 新着メッセージフラグをクリアする
+        clearNewMessageFlag(data.direct_message.sender_id);
       },
       connected() {
-        console.log("Connected to the channel");
+        console.log("DirectMessagesChannelに接続されました");
       },
       disconnected() {
-        console.log("Disconnected from the channel");
+        console.log("DirectMessagesChannelから切断されました");
       },
     };
 
@@ -114,13 +154,17 @@ const DirectMessageDetail: React.FC = () => {
       subscription as Subscription
     );
 
-    console.log("Subscribed to the channel");
-
     return () => {
       channel.unsubscribe();
-      console.log("Unsubscribed from the channel");
     };
-  }, [fetchDirectMessages, isAuthenticated, isLoading, user, messageId]);
+  }, [
+    fetchDirectMessages,
+    isAuthenticated,
+    isLoading,
+    user,
+    messageId,
+    setNewDirectMessages,
+  ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,6 +173,7 @@ const DirectMessageDetail: React.FC = () => {
       return;
     }
 
+    // メッセージを編集する場合
     if (editingMessageId !== null) {
       try {
         const response = await fetch(
@@ -149,11 +194,11 @@ const DirectMessageDetail: React.FC = () => {
         if (!response.ok) {
           const text = await response.text();
           throw new Error(
-            `Network response was not ok: ${response.statusText}\n${text}`
+            `ネットワーク応答が正常ではありません: ${response.statusText}\n${text}`
           );
         }
         const data = await response.json();
-        console.log("Updated message:", data);
+        console.log("メッセージが更新されました:", data);
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === editingMessageId
@@ -168,6 +213,7 @@ const DirectMessageDetail: React.FC = () => {
         console.error("メッセージの編集に問題が発生しました:", error);
       }
     } else {
+      // 新しいメッセージを送信する場合
       if (messages.length === 0) {
         console.error(
           "メッセージが利用できないため、受信者IDを判断できません。"
@@ -197,7 +243,7 @@ const DirectMessageDetail: React.FC = () => {
         if (!response.ok) {
           const text = await response.text();
           throw new Error(
-            `Network response was not ok: ${response.statusText}\n${text}`
+            `ネットワーク応答が正常ではありません: ${response.statusText}\n${text}`
           );
         }
         const data = await response.json();
@@ -237,7 +283,7 @@ const DirectMessageDetail: React.FC = () => {
         if (!response.ok) {
           const text = await response.text();
           throw new Error(
-            `Network response was not ok: ${response.statusText}\n${text}`
+            `ネットワーク応答が正常ではありません: ${response.statusText}\n${text}`
           );
         }
         setMessages((prevMessages) =>
@@ -249,14 +295,17 @@ const DirectMessageDetail: React.FC = () => {
     }
   };
 
+  // ローディング中の場合の表示
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
+  // 認証情報が不足している場合の表示
   if (!isAuthenticated || !user || !messageId) {
     return <div>Loading...</div>;
   }
 
+  // メッセージリストとメッセージ入力フォームを表示
   return (
     <div>
       <MessageList
