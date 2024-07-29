@@ -10,6 +10,7 @@ import RequireAuth from "./components/RequireAuth";
 import EmailConfirmationPage from "./components/EmailConfirmationPage";
 import PasswordResetRequestPage from "./components/PasswordResetRequestPage";
 import PasswordResetPage from "./components/PasswordResetPage";
+import ProfilePage from "./components/ProfilePage";
 
 const App: React.FC = () => {
   return (
@@ -36,6 +37,7 @@ const App: React.FC = () => {
             path="/password/edit/:reset_password_token"
             element={<PasswordResetPage />}
           />
+          <Route path="/profile" element={<ProfilePage />} />
           {/* 他のルート */}
         </Routes>
       </Router>

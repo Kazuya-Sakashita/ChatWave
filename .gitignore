@@ -17,6 +17,8 @@
 # Ignore uploaded files in development
 /backend/storage/*
 !/backend/storage/.keep
+/backend/public/uploads
+/backend/public/uploads/*
 
 # Ignore master key for decrypting credentials and more
 /backend/config/master.key
@@ -61,3 +63,7 @@ Thumbs.db
 # Temporary files and directories
 /tmp/
 /tmp/db/
+
+# Ignore uploaded files
+/public/uploads
+/public/uploads/*

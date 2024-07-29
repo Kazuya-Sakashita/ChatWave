@@ -11,6 +11,7 @@ Rails.application.routes.draw do
     confirmations: 'users/confirmations',
     passwords: 'users/passwords'
   }
+  resource :profile, only: [:new, :create, :edit, :update, :show]
 
   get '/me', to: 'users#show'
 
