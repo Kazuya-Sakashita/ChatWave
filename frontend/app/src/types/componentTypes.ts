@@ -48,15 +48,13 @@ export interface PasswordResetPageState {
 
 // Profileの型を定義
 export interface Profile {
-  fullName: string;
-  birthDate: string;
+  full_name: string;
+  birth_date: string;
   gender: string;
-  phoneNumber: string;
-  postalCode: string;
+  phone_number: string;
+  postal_code: string;
   address: string;
-  avatar: string; // URLまたはファイルパス
-  userId: number;
-  visibility: Visibility; // 公開範囲の設定
+  avatar_url: string;
 }
 
 // Visibilityの型を定義

@@ -1,16 +1,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import styles from "./ProfilePage.module.css"; // CSSファイルをインポート
-
-interface Profile {
-  full_name: string;
-  birth_date: string;
-  gender: string;
-  phone_number: string;
-  postal_code: string;
-  address: string;
-  avatar_url: string;
-}
+import { Profile } from "../types/componentTypes"; // 型をインポート
 
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
