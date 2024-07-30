@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import axios from "../api/axiosConfig";
 import styles from "./ProfilePage.module.css"; // CSSファイルをインポート
 import { Profile } from "../types/componentTypes"; // 型をインポート
@@ -44,6 +45,10 @@ const ProfilePage: React.FC = () => {
               />
             </div>
           )}
+
+          <Link to="/profile/edit" className={styles["edit-button"]}>
+            編集
+          </Link>
         </div>
       )}
     </div>
