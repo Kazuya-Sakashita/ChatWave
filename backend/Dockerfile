@@ -11,6 +11,9 @@ RUN apt-get update -qq && \
     apt-get update && \
     apt-get install -y yarn nodejs
 
+# タイムゾーンの設定
+ENV TZ=Asia/Tokyo
+
 # ワークディレクトリを設定
 WORKDIR /backend
 
