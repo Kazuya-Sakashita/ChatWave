@@ -63,6 +63,55 @@ ActiveRecord::Schema[7.0].define(version: 2024_07_27_222227) do
     t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
+  create_table "direct_messages", force: :cascade do |t|
+    t.bigint "sender_id", null: false
+    t.bigint "recipient_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["recipient_id"], name: "index_direct_messages_on_recipient_id"
+    t.index ["sender_id"], name: "index_direct_messages_on_sender_id"
+  end
+
+  create_table "friends", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.bigint "friend_id", null: false
+    t.boolean "confirmed", default: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["friend_id"], name: "index_friends_on_friend_id"
+    t.index ["user_id", "friend_id"], name: "index_friends_on_user_id_and_friend_id", unique: true
+    t.index ["user_id"], name: "index_friends_on_user_id"
+  end
+
+  create_table "group_members", force: :cascade do |t|
+    t.bigint "group_id", null: false
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["group_id"], name: "index_group_members_on_group_id"
+    t.index ["user_id"], name: "index_group_members_on_user_id"
+  end
+
+  create_table "groups", force: :cascade do |t|
+    t.string "name", null: false
+    t.bigint "owner_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["owner_id"], name: "index_groups_on_owner_id"
+  end
+
+  create_table "messages", force: :cascade do |t|
+    t.bigint "sender_id", null: false
+    t.string "chat_room_type", null: false
+    t.bigint "chat_room_id", null: false
+    t.text "content", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["chat_room_type", "chat_room_id"], name: "index_messages_on_chat_room"
+    t.index ["sender_id"], name: "index_messages_on_sender_id"
+  end
+
   create_table "profiles", force: :cascade do |t|
     t.string "full_name"
     t.date "birth_date"
@@ -96,6 +145,14 @@ ActiveRecord::Schema[7.0].define(version: 2024_07_27_222227) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "direct_messages", "users", column: "recipient_id"
+  add_foreign_key "direct_messages", "users", column: "sender_id"
+  add_foreign_key "friends", "users"
+  add_foreign_key "friends", "users", column: "friend_id"
+  add_foreign_key "group_members", "groups"
+  add_foreign_key "group_members", "users"
+  add_foreign_key "groups", "users", column: "owner_id"
+  add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "direct_messages", "users", column: "recipient_id"
   add_foreign_key "direct_messages", "users", column: "sender_id"
   add_foreign_key "friends", "users"
