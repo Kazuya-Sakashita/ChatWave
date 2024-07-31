@@ -1,0 +1,91 @@
+.message {
+  display: flex;
+  margin: 10px;
+}
+
+.message.left {
+  justify-content: flex-start;
+}
+
+.message.right {
+  justify-content: flex-end;
+}
+
+.message .content {
+  max-width: 60%;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f1f0f0;
+}
+
+.message.right .content {
+  background-color: #dcf8c6;
+}
+
+/* フォームのスタイル */
+.form-container {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  border-top: 1px solid #ddd;
+  background-color: #f9f9f9;
+}
+
+.form-container input[type="text"] {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-right: 10px;
+}
+
+/* メッセージのアクションボタンのスタイル */
+.message {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.message .content {
+  flex-grow: 1;
+}
+
+.message .actions {
+  display: flex;
+  gap: 5px; /* ボタン間のスペース */
+  margin-left: 10px;
+}
+
+.message button {
+  padding: 5px 10px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.3s, transform 0.3s;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.message button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
+}
+
+.message button:active {
+  background-color: #004085;
+  transform: translateY(0);
+}
+
+.message button.delete {
+  background-color: #dc3545;
+}
+
+.message button.delete:hover {
+  background-color: #c82333;
+}
+
+.message button.delete:active {
+  background-color: #bd2130;
+}

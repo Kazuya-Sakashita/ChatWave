@@ -40,7 +40,9 @@ const Header: React.FC = () => {
 
   return (
     <header className={styles.header}>
-      <div className={styles.logo}>ChatWave</div>
+      <Link to="/" className={styles.logo}>
+        ChatWave
+      </Link>
       <nav>
         <ul>
           {isAuthenticated ? (

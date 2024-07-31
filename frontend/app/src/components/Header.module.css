@@ -1,3 +1,4 @@
+/* Header.module.css */
 .header {
   background-color: #007bff;
   padding: 10px 20px;
@@ -10,6 +11,8 @@
 .logo {
   font-size: 24px;
   font-weight: bold;
+  text-decoration: none; /* Linkの下線を削除 */
+  color: white; /* Linkの文字色を白に設定 */
 }
 
 nav ul {
