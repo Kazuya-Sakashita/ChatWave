@@ -1,4 +1,6 @@
 class User < ApplicationRecord
+  has_one :profile, class_name: 'Profile', dependent: :destroy
+
   include Devise::JWT::RevocationStrategies::JTIMatcher
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable, :confirmable,
@@ -18,4 +20,14 @@ class User < ApplicationRecord
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true
   validates :encrypted_password, presence: true
+
+  accepts_nested_attributes_for :profile
+
+  def avatar_url
+    if profile&.avatar.present?
+      profile.avatar.url
+    else
+      nil
+    end
+  end
 end

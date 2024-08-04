@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_06_19_224410) do
+ActiveRecord::Schema[7.0].define(version: 2024_07_27_222227) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -63,6 +63,20 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_19_224410) do
     t.index ["sender_id"], name: "index_messages_on_sender_id"
   end
 
+  create_table "profiles", force: :cascade do |t|
+    t.string "full_name"
+    t.date "birth_date"
+    t.string "gender"
+    t.string "phone_number"
+    t.string "postal_code"
+    t.string "address"
+    t.string "avatar"
+    t.bigint "user_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["user_id"], name: "index_profiles_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -90,4 +104,5 @@ ActiveRecord::Schema[7.0].define(version: 2024_06_19_224410) do
   add_foreign_key "group_members", "users"
   add_foreign_key "groups", "users", column: "owner_id"
   add_foreign_key "messages", "users", column: "sender_id"
+  add_foreign_key "profiles", "users"
 end

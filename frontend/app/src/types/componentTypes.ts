@@ -17,6 +17,13 @@ export interface SignupPageState {
   password: string;
   passwordConfirmation: string;
   error: string;
+  fullName: string;
+  birthDate: string;
+  gender: string;
+  phoneNumber: string;
+  postalCode: string;
+  address: string;
+  avatar: File | null;
 }
 
 // performLogoutアクションのレスポンス型を定義
@@ -109,4 +116,48 @@ export interface MessageListProps {
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
+}
+
+// Profileの型を定義
+export interface Profile {
+  full_name: string;
+  birth_date: string;
+  gender: string;
+  phone_number: string;
+  postal_code: string;
+  address: string;
+  avatar_url: string;
+}
+
+// Visibilityの型を定義
+export type Visibility = "public" | "private" | "friends";
+
+// ProfilePageコンポーネントのローカルステートの型を定義
+export interface ProfilePageState {
+  fullName: string;
+  birthDate: string;
+  gender: string;
+  phoneNumber: string;
+  postalCode: string;
+  address: string;
+  avatar: File | null;
+  visibility: Visibility;
+  error: string | null;
+}
+
+// MessageContextのプロパティの型を定義
+export interface MessageContextProps {
+  newMessages: { [key: number]: boolean };
+  setNewMessages: React.Dispatch<
+    React.SetStateAction<{ [key: number]: boolean }>
+  >;
+  newDirectMessages: { [key: number]: boolean };
+  setNewDirectMessages: React.Dispatch<
+    React.SetStateAction<{ [key: number]: boolean }>
+  >;
+}
+
+// MessageProviderコンポーネントのプロパティの型を定義
+export interface MessageProviderProps {
+  children: React.ReactNode;
 }

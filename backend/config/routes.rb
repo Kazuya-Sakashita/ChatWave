@@ -12,6 +12,7 @@ Rails.application.routes.draw do
     confirmations: 'users/confirmations',
     passwords: 'users/passwords'
   }
+  resource :profile, only: [:new, :create, :edit, :update, :show]
 
   resources :chats, only: [:index]
   resources :groups, only: [:show] do

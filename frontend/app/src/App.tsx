@@ -13,6 +13,7 @@ import ChatList from "./components/ChatList";
 import GroupChatDetail from "./components/GroupChatDetail";
 import DirectMessageDetail from "./components/DirectMessageDetail";
 import { MessageProvider } from "./context/MessageContext";
+import ProfilePage from "./components/ProfilePage";
 
 const App: React.FC = () => {
   return (
@@ -74,6 +75,7 @@ const App: React.FC = () => {
                 </RequireAuth>
               }
             />
+            <Route path="/profile" element={<ProfilePage />} />
             {/* 他のルート */}
           </Routes>
         </Router>

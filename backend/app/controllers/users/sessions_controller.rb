@@ -11,15 +11,15 @@ class Users::SessionsController < Devise::SessionsController
       token = current_token
       respond_with(user, token)
     else
-      render json: { error: 'Invalid Email or Password' }, status: :unauthorized
+      render json: { error: '無効なメールアドレスまたはパスワードです' }, status: :unauthorized
     end
   end
 
   def destroy
-    logger.info "Attempting to log out user"
+    logger.info "ユーザーのログアウトを試みています"
     super
   rescue StandardError => e
-    logger.error "Logout failed: #{e.message}"
+    logger.error "ログアウトに失敗しました: #{e.message}"
     render json: { error: e.message }, status: :unauthorized
   end
 
@@ -29,7 +29,7 @@ class Users::SessionsController < Devise::SessionsController
     render json: {
       status: {
         code: 200,
-        message: 'Logged in successfully.',
+        message: '正常にログインしました',
         data: {
           user: UserSerializer.new(resource).serializable_hash[:data][:attributes],
           token: token
@@ -47,29 +47,29 @@ class Users::SessionsController < Devise::SessionsController
         if current_user
           render json: {
             status: 200,
-            message: 'Logged out successfully.'
+            message: '正常にログアウトしました'
           }, status: :ok
         else
           render json: {
             status: 401,
-            message: "Couldn't find an active session."
+            message: 'アクティブなセッションが見つかりません'
           }, status: :unauthorized
         end
       rescue JWT::DecodeError => e
         render json: {
           status: 401,
-          message: "Invalid token: #{e.message}"
+          message: "無効なトークンです: #{e.message}"
         }, status: :unauthorized
       rescue StandardError => e
         render json: {
           status: 500,
-          message: "Internal server error: #{e.message}"
+          message: "内部サーバーエラーです: #{e.message}"
         }, status: :internal_server_error
       end
     else
       render json: {
         status: 401,
-        message: "Authorization header missing."
+        message: "Authorizationヘッダーが欠落しています"
       }, status: :unauthorized
     end
   end

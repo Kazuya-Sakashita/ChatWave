@@ -1,0 +1,23 @@
+.profile-container {
+  max-width: 600px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+}
+
+.profile-content {
+  text-align: left;
+}
+
+.avatar-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.avatar {
+  width: 200px;
+  height: auto;
+  border-radius: 50%;
+}
