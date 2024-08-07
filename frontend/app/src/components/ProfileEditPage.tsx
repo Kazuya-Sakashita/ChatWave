@@ -1,22 +1,19 @@
 import React, { useEffect, useState } from "react";
 import axios from "../api/axiosConfig";
 import { useNavigate } from "react-router-dom";
+import { useForm, Controller } from "react-hook-form";
 import styles from "./ProfileEditPage.module.css"; // CSSファイルをインポート
 import { ProfilePageState } from "../types/componentTypes"; // 型をインポート
 
 const ProfileEditPage: React.FC = () => {
-  const [profile, setProfile] = useState<ProfilePageState>({
-    fullName: "",
-    birthDate: "",
-    gender: "",
-    phoneNumber: "",
-    postalCode: "",
-    address: "",
-    avatar: null,
-    visibility: "public",
-    error: null,
-  });
+  const {
+    control,
+    handleSubmit,
+    setValue,
+    formState: { errors },
+  } = useForm<ProfilePageState>();
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [profileError, setProfileError] = useState<string | null>(null);
 
   const navigate = useNavigate();
 
@@ -33,58 +30,39 @@ const ProfileEditPage: React.FC = () => {
           address,
           avatar_url,
         } = response.data.profile;
-        setProfile((prevProfile) => ({
-          ...prevProfile,
-          fullName: full_name,
-          birthDate: birth_date,
-          gender: gender,
-          phoneNumber: phone_number,
-          postalCode: postal_code,
-          address: address,
-        }));
+
+        setValue("fullName", full_name);
+        setValue("birthDate", birth_date);
+        setValue("gender", gender);
+        setValue("phoneNumber", phone_number);
+        setValue("postalCode", postal_code);
+        setValue("address", address);
         setAvatarUrl(avatar_url);
       } catch (err) {
-        setProfile((prevProfile) => ({
-          ...prevProfile,
-          error: "プロフィール情報の取得に失敗しました",
-        }));
+        setProfileError("プロフィール情報の取得に失敗しました");
       }
     };
 
     fetchProfile();
-  }, []);
+  }, [setValue]);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setProfile((prevProfile) => ({
-      ...prevProfile,
-      [name]: value,
-    }));
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  const handleFileChange = (files: FileList | null) => {
     if (files && files.length > 0) {
-      setProfile((prevProfile) => ({
-        ...prevProfile,
-        avatar: files[0],
-      }));
+      setValue("avatar", files[0]);
       setAvatarUrl(URL.createObjectURL(files[0])); // 選択した新しい画像をプレビュー
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const onSubmit = async (data: ProfilePageState) => {
     const formData = new FormData();
-    formData.append("profile[full_name]", profile.fullName);
-    formData.append("profile[birth_date]", profile.birthDate);
-    formData.append("profile[gender]", profile.gender);
-    formData.append("profile[phone_number]", profile.phoneNumber);
-    formData.append("profile[postal_code]", profile.postalCode);
-    formData.append("profile[address]", profile.address);
-    if (profile.avatar) {
-      formData.append("profile[avatar]", profile.avatar);
+    formData.append("profile[full_name]", data.fullName);
+    formData.append("profile[birth_date]", data.birthDate);
+    formData.append("profile[gender]", data.gender);
+    formData.append("profile[phone_number]", data.phoneNumber);
+    formData.append("profile[postal_code]", data.postalCode);
+    formData.append("profile[address]", data.address);
+    if (data.avatar) {
+      formData.append("profile[avatar]", data.avatar);
     }
 
     try {
@@ -95,71 +73,95 @@ const ProfileEditPage: React.FC = () => {
       });
       navigate("/profile");
     } catch (err) {
-      setProfile((prevProfile) => ({
-        ...prevProfile,
-        error: "プロフィールの更新に失敗しました",
-      }));
+      setProfileError("プロフィールの更新に失敗しました");
     }
   };
 
   return (
     <div className={styles["profile-edit-container"]}>
       <h1>プロフィール編集</h1>
-      {profile.error && <p style={{ color: "red" }}>{profile.error}</p>}
-      <form onSubmit={handleSubmit} className={styles["profile-edit-form"]}>
+      {profileError && <p style={{ color: "red" }}>{profileError}</p>}
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className={styles["profile-edit-form"]}
+      >
         <div>
           <label>フルネーム:</label>
-          <input
-            type="text"
+          <Controller
             name="fullName"
-            value={profile.fullName}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "フルネームは必須です" }}
+            render={({ field }) => <input type="text" {...field} />}
           />
+          {errors.fullName && (
+            <p style={{ color: "red" }}>{errors.fullName.message}</p>
+          )}
         </div>
         <div>
           <label>生年月日:</label>
-          <input
-            type="date"
+          <Controller
             name="birthDate"
-            value={profile.birthDate}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "生年月日は必須です" }}
+            render={({ field }) => <input type="date" {...field} />}
           />
+          {errors.birthDate && (
+            <p style={{ color: "red" }}>{errors.birthDate.message}</p>
+          )}
         </div>
         <div>
           <label>性別:</label>
-          <input
-            type="text"
+          <Controller
             name="gender"
-            value={profile.gender}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "性別は必須です" }}
+            render={({ field }) => <input type="text" {...field} />}
           />
+          {errors.gender && (
+            <p style={{ color: "red" }}>{errors.gender.message}</p>
+          )}
         </div>
         <div>
           <label>電話番号:</label>
-          <input
-            type="text"
+          <Controller
             name="phoneNumber"
-            value={profile.phoneNumber}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "電話番号は必須です" }}
+            render={({ field }) => <input type="text" {...field} />}
           />
+          {errors.phoneNumber && (
+            <p style={{ color: "red" }}>{errors.phoneNumber.message}</p>
+          )}
         </div>
         <div>
           <label>郵便番号:</label>
-          <input
-            type="text"
+          <Controller
             name="postalCode"
-            value={profile.postalCode}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "郵便番号は必須です" }}
+            render={({ field }) => <input type="text" {...field} />}
           />
+          {errors.postalCode && (
+            <p style={{ color: "red" }}>{errors.postalCode.message}</p>
+          )}
         </div>
         <div>
           <label>住所:</label>
-          <input
-            type="text"
+          <Controller
             name="address"
-            value={profile.address}
-            onChange={handleInputChange}
+            control={control}
+            defaultValue=""
+            rules={{ required: "住所は必須です" }}
+            render={({ field }) => <input type="text" {...field} />}
           />
+          {errors.address && (
+            <p style={{ color: "red" }}>{errors.address.message}</p>
+          )}
         </div>
         <div>
           <label>プロフィール画像:</label>
@@ -172,7 +174,23 @@ const ProfileEditPage: React.FC = () => {
               />
             </div>
           )}
-          <input type="file" name="avatar" onChange={handleFileChange} />
+          <Controller
+            name="avatar"
+            control={control}
+            defaultValue={null}
+            render={({ field }) => (
+              <input
+                type="file"
+                onChange={(e) => {
+                  field.onChange(e.target.files?.[0]);
+                  handleFileChange(e.target.files);
+                }}
+              />
+            )}
+          />
+          {errors.avatar && (
+            <p style={{ color: "red" }}>{errors.avatar.message}</p>
+          )}
         </div>
         <button type="submit">更新</button>
       </form>
