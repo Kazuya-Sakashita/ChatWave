@@ -58,3 +58,14 @@ h1 {
 p {
   text-align: center;
 }
+
+.avatar-preview {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.avatar {
+  width: 300px; /* ここで画像の幅を指定 */
+  object-fit: cover; /* アスペクト比を保持しつつ、コンテナに収まるようにする */
+}

@@ -13,6 +13,7 @@ const SignupPage: React.FC = () => {
     formState: { errors },
   } = useForm<SignupPageState>();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const onSubmit = async (data: SignupPageState) => {
@@ -48,6 +49,13 @@ const SignupPage: React.FC = () => {
       navigate("/confirmation");
     } catch (err) {
       setServerError("登録に失敗しました");
+    }
+  };
+
+  const handleAvatarChange = (files: FileList | null) => {
+    if (files && files.length > 0) {
+      const file = files[0];
+      setAvatarPreview(URL.createObjectURL(file));
     }
   };
 
@@ -227,9 +235,19 @@ const SignupPage: React.FC = () => {
                   const files = e.target.files;
                   if (files && files.length > 0) {
                     field.onChange(files[0]);
+                    handleAvatarChange(files);
                   }
                 }}
               />
+              {avatarPreview && (
+                <div className={styles["avatar-preview"]}>
+                  <img
+                    src={avatarPreview}
+                    alt="プロフィール画像のプレビュー"
+                    className={styles["avatar"]}
+                  />
+                </div>
+              )}
             </div>
           )}
         />
