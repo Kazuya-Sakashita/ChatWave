@@ -9,6 +9,7 @@ import {
   Subscription,
 } from "@rails/actioncable";
 import { useMessageContext } from "../context/MessageContext";
+import axios from "../api/axiosConfig";
 
 const ChatList: React.FC = () => {
   const [groups, setGroups] = useState<Group[]>([]);
@@ -22,31 +23,40 @@ const ChatList: React.FC = () => {
   } = useMessageContext();
   const navigate = useNavigate();
 
-  // グループチャットとダイレクトメッセージのリストを取得する関数
-  const fetchChats = useCallback(async () => {
-    try {
-      const response = await fetch("http://localhost:3000/chats", {
-        method: "GET",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-        },
-      });
-      if (!response.ok) {
-        throw new Error("ネットワーク応答が正常ではありません");
-      }
-      const data = await response.json();
-      setGroups(data.groups);
-      setDirectMessages(data.direct_messages);
-    } catch (error) {
-      console.error("フェッチ操作に問題が発生しました:", error);
-    }
-  }, []);
+  const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
 
-  // 新着メッセージのリストを取得する関数
+  // 新着メッセージのリストを取得する関数（グループとダイレクト両方）
   const fetchNewMessages = useCallback(async () => {
+    if (!notificationEnabled) return; // 通知がオフの場合は何もしない
+
     try {
-      const response = await fetch(
+      // グループの新着メッセージ取得
+      const groupResponse = await fetch(
+        "http://localhost:3000/groups/new_messages",
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      if (!groupResponse.ok) {
+        throw new Error("グループの新着メッセージ取得に失敗しました");
+      }
+      const groupMessages = await groupResponse.json();
+
+      if (typeof groupMessages.new_messages === "object") {
+        setNewMessages(groupMessages.new_messages);
+      } else {
+        console.error(
+          "Unexpected data format for group messages:",
+          groupMessages.new_messages
+        );
+      }
+
+      // ダイレクトメッセージの新着メッセージ取得
+      const directResponse = await fetch(
         "http://localhost:3000/direct_messages/new_messages",
         {
           method: "GET",
@@ -56,20 +66,51 @@ const ChatList: React.FC = () => {
           },
         }
       );
-      if (!response.ok) {
-        throw new Error("ネットワーク応答が正常ではありません");
+      if (!directResponse.ok) {
+        throw new Error("ダイレクトメッセージの新着取得に失敗しました");
       }
-      const newMessagesResponse = await response.json();
-      setNewDirectMessages(newMessagesResponse.new_messages);
+      const directMessagesResponse = await directResponse.json();
+      setNewDirectMessages(directMessagesResponse.new_messages);
+    } catch (error) {
+      console.error("新着メッセージの取得に失敗しました:", error);
+    }
+  }, [setNewMessages, setNewDirectMessages, notificationEnabled]);
+
+  // グループチャットとダイレクトメッセージのリストを取得する関数
+  const fetchChats = useCallback(async () => {
+    try {
+      // 通知設定を取得
+      const notificationResponse = await axios.get("/notification_setting");
+      const enabled = notificationResponse.data.enabled;
+      setNotificationEnabled(enabled);
+
+      // チャット情報を取得
+      const response = await fetch("http://localhost:3000/chats", {
+        method: "GET",
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+      if (!response.ok) {
+        throw new Error("チャット情報の取得に失敗しました");
+      }
+      const data = await response.json();
+      setGroups(data.groups);
+      setDirectMessages(data.direct_messages);
+
+      // 新着メッセージの取得
+      if (enabled) {
+        fetchNewMessages();
+      }
     } catch (error) {
       console.error("フェッチ操作に問題が発生しました:", error);
     }
-  }, [setNewDirectMessages]);
+  }, [fetchNewMessages]);
 
   // 初回ロード時にチャットリストと新着メッセージを取得し、WebSocketを設定する
   useEffect(() => {
     fetchChats();
-    fetchNewMessages();
 
     // WebSocket接続の設定
     const cable = createConsumer("ws://localhost:3000/cable");
@@ -80,17 +121,19 @@ const ChatList: React.FC = () => {
 
     const subscription: Partial<Subscription> = {
       received(data: { group_id?: number; sender_id: number }) {
-        console.log("新着メッセージ通知を受信:", data);
-        if (data.group_id !== undefined) {
-          setNewMessages((prevNewMessages) => ({
-            ...prevNewMessages,
-            [data.group_id!]: true,
-          }));
-        } else {
-          setNewDirectMessages((prevNewMessages) => ({
-            ...prevNewMessages,
-            [data.sender_id]: true,
-          }));
+        // 通知設定が有効な場合のみ、新着表示を更新
+        if (notificationEnabled) {
+          if (data.group_id !== undefined) {
+            setNewMessages((prevNewMessages) => ({
+              ...prevNewMessages,
+              [data.group_id!]: true,
+            }));
+          } else {
+            setNewDirectMessages((prevNewMessages) => ({
+              ...prevNewMessages,
+              [data.sender_id]: true,
+            }));
+          }
         }
       },
       connected() {
@@ -111,10 +154,10 @@ const ChatList: React.FC = () => {
     };
   }, [
     fetchChats,
-    fetchNewMessages,
     user,
     setNewMessages,
     setNewDirectMessages,
+    notificationEnabled,
   ]);
 
   // グループチャットをクリックしたときに新着メッセージをクリアする関数
