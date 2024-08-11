@@ -13,6 +13,7 @@ Rails.application.routes.draw do
     passwords: 'users/passwords'
   }
   resource :profile, only: [:new, :create, :edit, :update, :show]
+  resource :notification_setting, only: [:show, :update]
 
   resources :chats, only: [:index]
   resources :groups, only: [:show] do

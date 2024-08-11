@@ -2,7 +2,8 @@ class NotificationSettingsController < ApplicationController
   before_action :authenticate_user!
 
   def show
-    setting = current_user.notification_setting
+    setting = current_user.notification_setting || initialize_notification_setting
+
     if setting
       render json: { enabled: setting.enabled }, status: :ok
     else
@@ -11,7 +12,8 @@ class NotificationSettingsController < ApplicationController
   end
 
   def update
-    setting = current_user.notification_setting || current_user.build_notification_setting
+    setting = current_user.notification_setting || initialize_notification_setting
+
     if setting.update(notification_setting_params)
       render json: { enabled: setting.enabled }, status: :ok
     else
@@ -23,5 +25,9 @@ class NotificationSettingsController < ApplicationController
 
   def notification_setting_params
     params.require(:notification_setting).permit(:enabled)
+  end
+
+  def initialize_notification_setting
+    current_user.create_notification_setting(enabled: true)
   end
 end
