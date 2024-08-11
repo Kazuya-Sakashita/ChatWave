@@ -161,3 +161,8 @@ export interface MessageContextProps {
 export interface MessageProviderProps {
   children: React.ReactNode;
 }
+
+// 新規追加: NotificationSettingの型を定義
+export interface NotificationSetting {
+  enabled: boolean;
+}

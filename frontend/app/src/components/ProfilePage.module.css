@@ -43,7 +43,7 @@
   margin-top: 20px;
   display: flex;
   align-items: center;
-  justify-content: center; /* 追加: ボタンを中央に配置 */
+  justify-content: center; /* ボタンを中央に配置 */
 }
 
 .toggle-label {
@@ -54,7 +54,7 @@
 .toggle-wrapper {
   display: flex;
   align-items: center;
-  justify-content: center; /* 追加: ボタンを中央に配置 */
+  justify-content: center; /* ボタンを中央に配置 */
 }
 
 .toggle-text {
@@ -83,7 +83,7 @@
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: #ccc;
+  background-color: #ccc; /* オフのときの背景色 */
   transition: 0.4s;
   border-radius: 34px;
 }
@@ -101,7 +101,11 @@
 }
 
 input:checked + .slider {
-  background-color: #2196f3;
+  background-color: #2196f3; /* オンのときの背景色 */
+}
+
+input:not(:checked) + .slider {
+  background-color: #ccc; /* オフのときの背景色 */
 }
 
 input:checked + .slider:before {

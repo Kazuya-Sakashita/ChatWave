@@ -1,10 +1,12 @@
 import { configureStore } from "@reduxjs/toolkit";
 import authReducer from "./authSlice";
+import notificationReducer from "./notificationSlice";
 
 // Reduxストアの設定
 const store = configureStore({
   reducer: {
     auth: authReducer,
+    notification: notificationReducer,
   },
 });
 
