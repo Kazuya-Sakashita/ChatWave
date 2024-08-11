@@ -25,6 +25,16 @@ const ChatList: React.FC = () => {
 
   const [notificationEnabled, setNotificationEnabled] = useState<boolean>(true);
 
+  // 通知設定をフェッチする関数
+  const fetchNotificationSetting = useCallback(async () => {
+    try {
+      const response = await axios.get("/notification_setting");
+      setNotificationEnabled(response.data.enabled);
+    } catch (error) {
+      console.error("通知設定の取得に失敗しました:", error);
+    }
+  }, []);
+
   // 新着メッセージのリストを取得する関数（グループとダイレクト両方）
   const fetchNewMessages = useCallback(async () => {
     if (!notificationEnabled) return; // 通知がオフの場合は何もしない
@@ -80,9 +90,7 @@ const ChatList: React.FC = () => {
   const fetchChats = useCallback(async () => {
     try {
       // 通知設定を取得
-      const notificationResponse = await axios.get("/notification_setting");
-      const enabled = notificationResponse.data.enabled;
-      setNotificationEnabled(enabled);
+      await fetchNotificationSetting();
 
       // チャット情報を取得
       const response = await fetch("http://localhost:3000/chats", {
@@ -100,13 +108,13 @@ const ChatList: React.FC = () => {
       setDirectMessages(data.direct_messages);
 
       // 新着メッセージの取得
-      if (enabled) {
-        fetchNewMessages();
+      if (notificationEnabled) {
+        await fetchNewMessages();
       }
     } catch (error) {
       console.error("フェッチ操作に問題が発生しました:", error);
     }
-  }, [fetchNewMessages]);
+  }, [fetchNewMessages, fetchNotificationSetting, notificationEnabled]);
 
   // 初回ロード時にチャットリストと新着メッセージを取得し、WebSocketを設定する
   useEffect(() => {
@@ -159,6 +167,22 @@ const ChatList: React.FC = () => {
     setNewDirectMessages,
     notificationEnabled,
   ]);
+
+  // 通知設定のトグル変更時に再フェッチ
+  const handleToggleNotification = async () => {
+    try {
+      const newEnabledState = !notificationEnabled;
+      setNotificationEnabled(newEnabledState);
+
+      await axios.put("/notification_setting", {
+        enabled: newEnabledState,
+      });
+
+      fetchChats(); // トグル後にチャットリストを再フェッチ
+    } catch (error) {
+      console.error("通知設定の変更に失敗しました:", error);
+    }
+  };
 
   // グループチャットをクリックしたときに新着メッセージをクリアする関数
   const handleGroupClick = async (groupId: number) => {
@@ -245,7 +269,9 @@ const ChatList: React.FC = () => {
               onClick={() => handleGroupClick(group.id)}
             >
               {group.name}{" "}
-              {newMessages[group.id] && <span className="new-badge">NEW</span>}
+              {notificationEnabled && newMessages[group.id] && (
+                <span className="new-badge">NEW</span>
+              )}
             </Link>
           </li>
         ))}
@@ -263,9 +289,10 @@ const ChatList: React.FC = () => {
               }
             >
               {getChatPartnerName(dm)}{" "}
-              {newDirectMessages[
-                dm.sender_id === user?.id ? dm.recipient_id : dm.sender_id
-              ] && <span className="new-badge">NEW</span>}
+              {notificationEnabled &&
+                newDirectMessages[
+                  dm.sender_id === user?.id ? dm.recipient_id : dm.sender_id
+                ] && <span className="new-badge">NEW</span>}
             </Link>
           </li>
         ))}

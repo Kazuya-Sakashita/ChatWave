@@ -13,7 +13,7 @@ const store = configureStore({
 // RootState型の定義
 export type RootState = ReturnType<typeof store.getState>;
 
-// AppDispatch型の定義s
+// AppDispatch型の定義
 export type AppDispatch = typeof store.dispatch;
 
 export default store;

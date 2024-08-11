@@ -39,7 +39,9 @@ users.each do |user|
   profile.save!
 
   # 通知設定の作成
-  NotificationSetting.create!(user: user, enabled: true)
+  unless NotificationSetting.exists?(user: user)
+    NotificationSetting.create!(user: user, enabled: true)
+  end
 end
 
 # グループの作成

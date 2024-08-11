@@ -36,12 +36,14 @@ const ProfilePage: React.FC = () => {
   }, []);
 
   const handleToggleChange = async () => {
-    setNotificationEnabled(!notificationEnabled);
-
     try {
-      await axios.put("/notification_setting", {
+      // トグルの状態を反転してバックエンドに送信
+      const response = await axios.put("/notification_setting", {
         enabled: !notificationEnabled,
       });
+
+      // バックエンドからのレスポンスに基づいてstateを更新
+      setNotificationEnabled(response.data.enabled);
     } catch (err) {
       console.error("通知設定の更新に失敗しました");
     }

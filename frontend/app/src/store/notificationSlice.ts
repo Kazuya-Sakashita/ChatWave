@@ -10,6 +10,7 @@ const initialState: NotificationState = {
   enabled: true,
 };
 
+// 通知設定を取得する非同期アクション
 export const fetchNotificationSetting = createAsyncThunk(
   "notification/fetchSetting",
   async () => {
@@ -18,6 +19,7 @@ export const fetchNotificationSetting = createAsyncThunk(
   }
 );
 
+// 通知設定を更新する非同期アクション
 export const updateNotificationSetting = createAsyncThunk(
   "notification/updateSetting",
   async (enabled: boolean) => {
@@ -49,5 +51,6 @@ const notificationSlice = createSlice({
 
 export default notificationSlice.reducer;
 
+// 通知設定の選択子
 export const selectNotificationEnabled = (state: RootState) =>
   state.notification.enabled;
