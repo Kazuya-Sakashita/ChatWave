@@ -170,7 +170,35 @@ const SignupPage: React.FC = () => {
           render={({ field }) => (
             <div>
               <label>性別:</label>
-              <input type="text" {...field} />
+              <div className={styles["gender-options"]}>
+                <label>
+                  <input
+                    type="radio"
+                    value="male"
+                    onChange={() => field.onChange("male")}
+                    checked={field.value === "male"}
+                  />
+                  男
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="female"
+                    onChange={() => field.onChange("female")}
+                    checked={field.value === "female"}
+                  />
+                  女
+                </label>
+                <label>
+                  <input
+                    type="radio"
+                    value="other"
+                    onChange={() => field.onChange("other")}
+                    checked={field.value === "other"}
+                  />
+                  その他
+                </label>
+              </div>
               {errors.gender && (
                 <p style={{ color: "red" }}>{errors.gender.message}</p>
               )}
