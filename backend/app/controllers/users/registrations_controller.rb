@@ -14,7 +14,10 @@ class Users::RegistrationsController < Devise::RegistrationsController
   def create
     build_resource(sign_up_params)
 
-    resource.build_profile(profile_params[:profile_attributes])
+    # `sign_up_params`内に`profile_attributes`が含まれていない場合の処理を確認
+    if profile_params[:profile_attributes]
+      resource.build_profile(profile_params[:profile_attributes])
+    end
 
     resource.save
     yield resource if block_given?
@@ -36,7 +39,15 @@ class Users::RegistrationsController < Devise::RegistrationsController
       email
       password
       password_confirmation
-      profile_attributes
+      profile_attributes => %i[
+        full_name
+        birth_date
+        gender
+        phone_number
+        postal_code
+        address
+        avatar
+      ]
     ])
 
     devise_parameter_sanitizer.permit(:account_update, keys: %i[
@@ -45,7 +56,15 @@ class Users::RegistrationsController < Devise::RegistrationsController
       password
       password_confirmation
       current_password
-      profile_attributes
+      profile_attributes => %i[
+        full_name
+        birth_date
+        gender
+        phone_number
+        postal_code
+        address
+        avatar
+      ]
     ])
   end
 
