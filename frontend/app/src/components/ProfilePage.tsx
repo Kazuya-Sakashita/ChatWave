@@ -88,6 +88,21 @@ const ProfilePage: React.FC = () => {
               />
             </div>
           )}
+          <div className={styles["notification-toggle"]}>
+            <span className={styles["toggle-label"]}>通知設定:</span>
+            <div className={styles["toggle-wrapper"]}>
+              <span className={styles["toggle-text"]}>オフ</span>
+              <label className={styles["switch"]}>
+                <input
+                  type="checkbox"
+                  checked={notificationEnabled} // ここでバックエンドから取得した状態が反映されます
+                  onChange={handleToggleChange}
+                />
+                <span className={styles["slider"]}></span>
+              </label>
+              <span className={styles["toggle-text"]}>オン</span>
+            </div>
+          </div>
           <Link to="/profile/edit" className={styles["edit-button"]}>
             編集
           </Link>
