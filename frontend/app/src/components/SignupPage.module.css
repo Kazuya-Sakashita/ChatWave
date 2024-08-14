@@ -1,5 +1,5 @@
 .form-container {
-  max-width: 400px;
+  max-width: 600px;
   margin: 50px auto;
   padding: 30px;
   border: 1px solid #d0e1f9;
@@ -57,4 +57,25 @@ h1 {
 
 p {
   text-align: center;
+}
+
+.avatar-preview {
+  margin-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.avatar {
+  width: 300px; /* ここで画像の幅を指定 */
+  object-fit: cover; /* アスペクト比を保持しつつ、コンテナに収まるようにする */
+}
+
+.gender-options {
+  display: flex;
+  gap: 20px; /* ラジオボタンの間隔を調整 */
+  align-items: center; /* ラベルとボタンを垂直方向に中央揃え */
+}
+
+.gender-options-inline {
+  display: inline;
 }

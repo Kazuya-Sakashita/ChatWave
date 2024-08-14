@@ -14,6 +14,7 @@ import GroupChatDetail from "./components/GroupChatDetail";
 import DirectMessageDetail from "./components/DirectMessageDetail";
 import { MessageProvider } from "./context/MessageContext";
 import ProfilePage from "./components/ProfilePage";
+import ProfileEditPage from "./components/ProfileEditPage";
 
 const App: React.FC = () => {
   return (
@@ -76,6 +77,7 @@ const App: React.FC = () => {
               }
             />
             <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/profile/edit" element={<ProfileEditPage />} />
             {/* 他のルート */}
           </Routes>
         </Router>
