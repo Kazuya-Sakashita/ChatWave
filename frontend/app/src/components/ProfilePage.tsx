@@ -7,6 +7,7 @@ import { Profile } from "../types/componentTypes"; // 型をインポート
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [notificationEnabled, setNotificationEnabled] = useState(true); // 初期状態をtrueに設定している可能性がある
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -32,6 +33,33 @@ const ProfilePage: React.FC = () => {
         return "その他";
       default:
         return gender; // 予期しない値が来た場合はそのまま表示
+    }
+  };
+
+  useEffect(() => {
+    const fetchNotificationSetting = async () => {
+      try {
+        const response = await axios.get("/notification_setting");
+        setNotificationEnabled(response.data.enabled); // バックエンドから取得した状態を反映
+      } catch (err) {
+        console.error("通知設定の取得に失敗しました");
+      }
+    };
+
+    fetchNotificationSetting();
+  }, []);
+
+  const handleToggleChange = async () => {
+    try {
+      // トグルの状態を反転してバックエンドに送信
+      const response = await axios.put("/notification_setting", {
+        enabled: !notificationEnabled,
+      });
+
+      // バックエンドからのレスポンスに基づいてstateを更新
+      setNotificationEnabled(response.data.enabled);
+    } catch (err) {
+      console.error("通知設定の更新に失敗しました");
     }
   };
 
