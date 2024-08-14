@@ -112,7 +112,6 @@ const ProfileEditPage: React.FC = () => {
           )}
         </div>
         <div>
-          <label>性別:</label>
           <Controller
             name="gender"
             control={control}
