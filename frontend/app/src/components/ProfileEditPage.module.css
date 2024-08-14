@@ -48,3 +48,9 @@
   width: auto;
   height: auto;
 }
+
+.gender-options {
+  display: flex;
+  gap: 20px; /* ラジオボタンの間隔を調整 */
+  align-items: center; /* ラベルとボタンを垂直方向で中央揃え */
+}

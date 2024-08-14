@@ -118,8 +118,45 @@ const ProfileEditPage: React.FC = () => {
             control={control}
             defaultValue=""
             rules={{ required: "性別は必須です" }}
-            render={({ field }) => <input type="text" {...field} />}
+            render={({ field }) => (
+              <div>
+                <label>性別:</label>
+                <div className={styles["gender-options"]}>
+                  <label>
+                    <input
+                      type="radio"
+                      value="male"
+                      onChange={() => field.onChange("male")}
+                      checked={field.value === "male"}
+                    />
+                    男
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="female"
+                      onChange={() => field.onChange("female")}
+                      checked={field.value === "female"}
+                    />
+                    女
+                  </label>
+                  <label>
+                    <input
+                      type="radio"
+                      value="other"
+                      onChange={() => field.onChange("other")}
+                      checked={field.value === "other"}
+                    />
+                    その他
+                  </label>
+                </div>
+                {errors.gender && (
+                  <p style={{ color: "red" }}>{errors.gender.message}</p>
+                )}
+              </div>
+            )}
           />
+
           {errors.gender && (
             <p style={{ color: "red" }}>{errors.gender.message}</p>
           )}
