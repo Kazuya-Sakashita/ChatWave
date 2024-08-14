@@ -27,7 +27,7 @@ users.each do |user|
   profile = user.build_profile(
     full_name: Faker::Name.name,
     birth_date: Faker::Date.birthday(min_age: 18, max_age: 65),
-    gender: ['男', '女'].sample,
+    gender: ['male', 'female', 'other'].sample,
     phone_number: Faker::Number.leading_zero_number(digits: 11),  # 11桁の日本の電話番号
     postal_code: Faker::Number.number(digits: 7),                 # 7桁の日本の郵便番号
     address: Faker::Address.full_address
