@@ -16,10 +16,9 @@
   margin-bottom: 20px;
 }
 
-.avatar-container img {
-  width: 150px;
-  height: 150px;
-  border-radius: 50%;
+.avatar {
+  max-width: 100px;
+  max-height: 100px;
 }
 
 .edit-button {
