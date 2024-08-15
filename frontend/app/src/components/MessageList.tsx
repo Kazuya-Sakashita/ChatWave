@@ -14,12 +14,6 @@ const MessageList: React.FC<MessageListProps> = ({
   handleDelete,
   user,
 }) => {
-  const isDirectMessage = (
-    msg: Message | DirectMessage
-  ): msg is DirectMessage => {
-    return "recipient_id" in msg;
-  };
-
   return (
     <ul>
       {messages
