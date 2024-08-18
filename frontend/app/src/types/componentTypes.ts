@@ -63,6 +63,7 @@ export type DirectMessage = {
   recipient_name: string; // 受信者の名前
   created_at: string; // 作成日時
   edited?: boolean; // 編集されたかどうか
+  is_read?: boolean; // 既読かどうかを表すプロパティを追加
 };
 
 // Message型を定義
@@ -74,6 +75,7 @@ export type Message = {
   created_at: string; // 作成日時
   edited?: boolean; // 編集されたかどうか
   deleted?: boolean; // 削除されたかどうか
+  is_read?: boolean; // 既読かどうかを表すプロパティを追加
 };
 
 // GroupChatDetailのローカルステートの型を定義

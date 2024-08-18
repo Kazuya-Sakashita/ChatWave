@@ -27,6 +27,7 @@ Rails.application.routes.draw do
     collection do
       get 'new_messages'
       post 'clear_new_messages'
+      post :mark_as_read
     end
   end
   get '/me', to: 'users#show'
