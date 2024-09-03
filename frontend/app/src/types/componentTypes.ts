@@ -118,6 +118,7 @@ export interface MessageListProps {
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
+  chatType: "direct" | "group";
 }
 
 // Profileの型を定義

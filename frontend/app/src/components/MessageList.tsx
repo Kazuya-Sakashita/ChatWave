@@ -10,6 +10,7 @@ interface MessageListProps {
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
+  chatType: "direct" | "group"; // chatTypeを追加
 }
 
 const MessageList: React.FC<MessageListProps> = ({
@@ -17,6 +18,7 @@ const MessageList: React.FC<MessageListProps> = ({
   handleEdit,
   handleDelete,
   user,
+  chatType, // chatTypeをプロパティとして追加
 }) => {
   const [updatedMessages, setUpdatedMessages] = useState(messages);
 
@@ -136,7 +138,8 @@ const MessageList: React.FC<MessageListProps> = ({
             }`}
           >
             <div className="content">
-              {senderId === user?.id && (
+              {/* ダイレクトメッセージの場合にのみ既読・未読表示 */}
+              {chatType === "direct" && senderId === user?.id && (
                 <span className="read-status">
                   {message.is_read ? "既読" : "未読"}{" "}
                 </span>

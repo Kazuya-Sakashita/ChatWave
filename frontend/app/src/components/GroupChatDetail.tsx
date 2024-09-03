@@ -269,6 +269,7 @@ const GroupChatDetail: React.FC = () => {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         user={user}
+        chatType="group"
       />
       <MessageForm
         newMessage={newMessage}
