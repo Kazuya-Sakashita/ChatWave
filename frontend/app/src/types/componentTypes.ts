@@ -76,6 +76,8 @@ export type Message = {
   edited?: boolean; // 編集されたかどうか
   deleted?: boolean; // 削除されたかどうか
   is_read?: boolean; // 既読かどうかを表すプロパティを追加
+  readers_count?: number;
+  total_group_members?: number;
 };
 
 // GroupChatDetailのローカルステートの型を定義
@@ -118,7 +120,9 @@ export interface MessageListProps {
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
-  chatType: "direct" | "group";
+  chatType: "direct" | "group"; // chatTypeを追加
+  groupId?: string; // グループIDをオプショナルに追加
+  totalGroupMembers?: number;
 }
 
 // Profileの型を定義

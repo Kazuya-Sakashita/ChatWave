@@ -6,7 +6,7 @@ import { createConsumer, Subscription } from "@rails/actioncable";
 import MessageList from "./MessageList";
 import MessageForm from "./MessageForm";
 import "../styles/ChatStyles.css";
-import { useMessageContext } from "../context/MessageContext"; // 新着メッセージのコンテキストをインポート
+import { useMessageContext } from "../context/MessageContext";
 
 const GroupChatDetail: React.FC = () => {
   const { groupId } = useParams<{ groupId: string }>();
@@ -18,9 +18,8 @@ const GroupChatDetail: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const { setNewMessages } = useMessageContext(); // 新着メッセージを更新するためのコンテキストフック
+  const { setNewMessages } = useMessageContext();
 
-  // 新着メッセージをクリアする関数
   const clearNewMessages = useCallback(async () => {
     try {
       const response = await fetch(
@@ -39,7 +38,6 @@ const GroupChatDetail: React.FC = () => {
       const data = await response.json();
       console.log("新着メッセージをクリアしました: ", data);
 
-      // 新着メッセージの状態を更新
       setNewMessages((prevNewMessages) => {
         const updatedNewMessages = { ...prevNewMessages };
         delete updatedNewMessages[Number(groupId)];
@@ -50,14 +48,12 @@ const GroupChatDetail: React.FC = () => {
     }
   }, [groupId, setNewMessages]);
 
-  // メッセージリストの末尾にスクロールする関数
-  const scrollToForm = () => {
+  const scrollToForm = useCallback(() => {
     if (formRef.current) {
       formRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  };
+  }, []);
 
-  // メッセージを取得するための関数
   const fetchGroupData = useCallback(async () => {
     try {
       const response = await fetch(`http://localhost:3000/groups/${groupId}`, {
@@ -80,7 +76,7 @@ const GroupChatDetail: React.FC = () => {
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
     }
-  }, [groupId, clearNewMessages]);
+  }, [groupId, clearNewMessages, scrollToForm]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -103,15 +99,29 @@ const GroupChatDetail: React.FC = () => {
         message: Message;
         message_id?: number;
         action?: string;
+        readers_count?: number;
+        total_group_members?: number;
       }) {
         if (data.action === "delete" && data.message_id) {
           setMessages((prevMessages) =>
             prevMessages.filter((message) => message.id !== data.message_id)
           );
-        } else {
+        } else if (data.action === "update_read_count" && data.message_id) {
+          setMessages((prevMessages) =>
+            prevMessages.map((message) =>
+              message.id === data.message_id
+                ? {
+                    ...message,
+                    readers_count: data.readers_count,
+                    total_group_members: data.total_group_members,
+                  }
+                : message
+            )
+          );
+        } else if (data.message) {
           setMessages((prevMessages) => {
             const existingIndex = prevMessages.findIndex(
-              (message) => message.id === data.message.id
+              (message) => message && message.id === data.message.id
             );
             if (existingIndex !== -1) {
               const updatedMessages = [...prevMessages];
@@ -121,7 +131,6 @@ const GroupChatDetail: React.FC = () => {
               return [...prevMessages, data.message];
             }
           });
-          // 新しいメッセージを受信したら新着メッセージをクリア
           clearNewMessages();
         }
         scrollToForm();
@@ -153,9 +162,9 @@ const GroupChatDetail: React.FC = () => {
     user,
     groupId,
     clearNewMessages,
+    scrollToForm,
   ]);
 
-  // メッセージ送信時の処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -164,59 +173,62 @@ const GroupChatDetail: React.FC = () => {
       return;
     }
 
-    if (editingMessageId !== null) {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`,
-          {
-            method: "PUT",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ content: newMessage }),
-          }
-        );
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text);
-        }
-        await response.json();
-        setEditingMessageId(null);
-        setNewMessage("");
-        scrollToForm();
-        console.log("メッセージを編集しました");
-      } catch (error) {
-        console.error("フェッチ操作に問題がありました:", error);
+    try {
+      const url =
+        editingMessageId !== null
+          ? `http://localhost:3000/groups/${groupId}/messages/${editingMessageId}`
+          : `http://localhost:3000/groups/${groupId}/create_message`;
+      const method = editingMessageId !== null ? "PUT" : "POST";
+      const response = await fetch(url, {
+        method,
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ content: newMessage }),
+      });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text);
       }
-    } else {
-      try {
-        const response = await fetch(
-          `http://localhost:3000/groups/${groupId}/create_message`,
-          {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ content: newMessage }),
-          }
-        );
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text);
-        }
-        await response.json();
-        setNewMessage("");
-        scrollToForm();
-        console.log("メッセージを送信しました");
-      } catch (error) {
-        console.error("フェッチ操作に問題がありました:", error);
+      const messageData = await response.json();
+      setEditingMessageId(null);
+      setNewMessage("");
+      scrollToForm();
+      console.log("メッセージを送信しました");
+
+      // メッセージ送信後に送信者を既読にする処理を追加
+      if (messageData.message && user) {
+        await markMessageAsRead(messageData.message.id);
       }
+    } catch (error) {
+      console.error("フェッチ操作に問題がありました:", error);
     }
   };
 
-  // メッセージ編集時の処理
+  // 送信者がメッセージを既読にする処理
+  const markMessageAsRead = async (messageId: number) => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/groups/mark_as_read`, // エンドポイントを正しい形式に修正
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ message_id: messageId, group_id: groupId }), // 必要なデータを送信
+        }
+      );
+      if (!response.ok) {
+        throw new Error("メッセージの既読処理に失敗しました");
+      }
+      console.log("メッセージを既読にしました: ", messageId);
+    } catch (error) {
+      console.error("既読処理に問題がありました:", error);
+    }
+  };
+
   const handleEdit = (messageId: number, currentContent: string) => {
     setEditingMessageId(messageId);
     setNewMessage(currentContent);
@@ -228,7 +240,6 @@ const GroupChatDetail: React.FC = () => {
     setNewMessage("");
   };
 
-  // メッセージ削除時の処理
   const handleDelete = async (messageId: number) => {
     if (window.confirm("このメッセージを削除してもよろしいですか？")) {
       try {
@@ -246,6 +257,9 @@ const GroupChatDetail: React.FC = () => {
           const text = await response.text();
           throw new Error(text);
         }
+        setMessages((prevMessages) =>
+          prevMessages.filter((message) => message.id !== messageId)
+        );
         console.log("メッセージを削除しました");
       } catch (error) {
         console.error("削除操作に問題がありました:", error);

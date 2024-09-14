@@ -18,6 +18,7 @@ class User < ApplicationRecord
   has_many :received_direct_messages, class_name: 'DirectMessage', foreign_key: 'recipient_id'
   has_one :notification_setting, dependent: :destroy
 
+
   after_create :create_notification_setting_with_default
 
   validates :name, presence: true

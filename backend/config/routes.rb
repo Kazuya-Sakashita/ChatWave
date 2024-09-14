@@ -17,12 +17,25 @@ Rails.application.routes.draw do
 
   resources :chats, only: [:index]
   resources :groups, only: [:show] do
-    post 'create_message', on: :member
-    put 'messages/:id', to: 'groups#update_message', as: 'update_message'
-    delete 'messages/:id', to: 'groups#destroy_message', as: 'destroy_message'
-    get 'new_messages', on: :collection
-    post 'clear_new_messages', on: :member
+    member do
+      post 'create_message'
+      post 'clear_new_messages'
+    end
+
+    collection do
+      get 'new_messages'
+      post 'mark_as_read'
+    end
+
+    # メッセージに関連するルーティングを追加
+    resources :messages, only: [] do
+      member do
+        put '', to: 'groups#update_message', as: 'update' # '/groups/:group_id/messages/:id'のルート
+        delete '', to: 'groups#destroy_message', as: 'destroy' # '/groups/:group_id/messages/:id'のルート
+      end
+    end
   end
+
   resources :direct_messages, only: [:index, :show, :create, :update, :destroy] do
     collection do
       get 'new_messages'

@@ -18,14 +18,13 @@ const MessageList: React.FC<MessageListProps> = ({
   handleEdit,
   handleDelete,
   user,
-  chatType, // chatTypeをプロパティとして追加
+  chatType,
 }) => {
   const [updatedMessages, setUpdatedMessages] = useState(messages);
 
   // 初期メッセージのセット
   useEffect(() => {
     setUpdatedMessages((prevMessages) => {
-      // 既存のメッセージを保持しつつ、新しいメッセージをマージする
       const newMessages = messages.filter(
         (newMessage) =>
           !prevMessages.some((message) => message.id === newMessage.id)
@@ -37,7 +36,6 @@ const MessageList: React.FC<MessageListProps> = ({
     });
   }, [messages]);
 
-  // メッセージの既読状態を更新
   const updateMessageStatus = useCallback(
     (messageId: number, status: string) => {
       setUpdatedMessages((prevMessages) =>
@@ -56,7 +54,6 @@ const MessageList: React.FC<MessageListProps> = ({
     []
   );
 
-  // メッセージを既読にする処理
   const markMessageAsRead = useCallback(
     async (messageId: number) => {
       try {
@@ -71,7 +68,6 @@ const MessageList: React.FC<MessageListProps> = ({
     [updateMessageStatus]
   );
 
-  // 新しいメッセージを処理
   const handleNewMessage = useCallback(
     (newMessage: DirectMessage) => {
       setUpdatedMessages((prevMessages) => {
@@ -96,7 +92,6 @@ const MessageList: React.FC<MessageListProps> = ({
 
   useMessageStatusChannel(user.id, updateMessageStatus);
 
-  // WebSocketでのリアルタイムメッセージ処理
   useEffect(() => {
     const cable = createConsumer("ws://localhost:3000/cable");
 
@@ -109,7 +104,6 @@ const MessageList: React.FC<MessageListProps> = ({
           if (data.action === "create") {
             handleNewMessage(data.direct_message);
           } else if (data.action === "read") {
-            // メッセージの既読状態を更新
             updateMessageStatus(data.message_id, data.status);
           }
         },
@@ -138,7 +132,16 @@ const MessageList: React.FC<MessageListProps> = ({
             }`}
           >
             <div className="content">
-              {/* ダイレクトメッセージの場合にのみ既読・未読表示 */}
+              {/* グループメッセージの場合にのみ送信者に既読人数/グループ人数表示 */}
+              {chatType === "group" &&
+                senderId === user?.id &&
+                "readers_count" in message &&
+                "total_group_members" in message && (
+                  <div className="read-status">
+                    既読: {message.readers_count}/{message.total_group_members}
+                  </div>
+                )}
+              {/* ダイレクトメッセージの場合に既読・未読表示 */}
               {chatType === "direct" && senderId === user?.id && (
                 <span className="read-status">
                   {message.is_read ? "既読" : "未読"}{" "}
