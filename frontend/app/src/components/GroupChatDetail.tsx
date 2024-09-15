@@ -20,6 +20,15 @@ const GroupChatDetail: React.FC = () => {
   const inputRef = useRef<HTMLInputElement>(null);
   const { setNewMessages } = useMessageContext();
 
+  const processedMessageIds = useRef<Set<number>>(new Set());
+  const cableRef = useRef<ReturnType<typeof createConsumer> | null>(null); // WebSocket接続管理用の参照
+
+  const scrollToForm = useCallback(() => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, []);
+
   const clearNewMessages = useCallback(async () => {
     try {
       const response = await fetch(
@@ -48,11 +57,35 @@ const GroupChatDetail: React.FC = () => {
     }
   }, [groupId, setNewMessages]);
 
-  const scrollToForm = useCallback(() => {
-    if (formRef.current) {
-      formRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, []);
+  const markMessageAsRead = useCallback(
+    async (messageId: number) => {
+      if (processedMessageIds.current.has(messageId)) {
+        return;
+      }
+      processedMessageIds.current.add(messageId);
+
+      try {
+        const response = await fetch(
+          "http://localhost:3000/groups/mark_as_read",
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ message_id: messageId, group_id: groupId }),
+          }
+        );
+        if (!response.ok) {
+          throw new Error("メッセージの既読処理に失敗しました");
+        }
+        console.log(`メッセージID: ${messageId}の既読通知が送信されました`);
+      } catch (error) {
+        console.error("既読処理に問題がありました:", error);
+      }
+    },
+    [groupId]
+  );
 
   const fetchGroupData = useCallback(async () => {
     try {
@@ -68,7 +101,22 @@ const GroupChatDetail: React.FC = () => {
       }
       const data = await response.json();
       setGroup(data.group);
-      setMessages(data.messages);
+
+      setMessages((prevMessages) => {
+        const mergedMessages = data.messages.map((newMessage: Message) => {
+          const existingMessage = prevMessages.find(
+            (msg) => msg.id === newMessage.id
+          );
+          return existingMessage
+            ? { ...existingMessage, ...newMessage }
+            : newMessage;
+        });
+
+        console.log("マージ後のメッセージリスト: ", mergedMessages);
+
+        return mergedMessages;
+      });
+
       if (data.group.new_messages) {
         await clearNewMessages();
       }
@@ -92,7 +140,13 @@ const GroupChatDetail: React.FC = () => {
 
     fetchGroupData();
 
+    if (cableRef.current) {
+      console.log("既存のWebSocket接続が存在します。再接続を防止します。");
+      return;
+    }
+
     const cable = createConsumer("ws://localhost:3000/cable");
+    cableRef.current = cable;
 
     const subscription: Partial<Subscription> = {
       received(data: {
@@ -102,37 +156,80 @@ const GroupChatDetail: React.FC = () => {
         readers_count?: number;
         total_group_members?: number;
       }) {
-        if (data.action === "delete" && data.message_id) {
-          setMessages((prevMessages) =>
-            prevMessages.filter((message) => message.id !== data.message_id)
-          );
-        } else if (data.action === "update_read_count" && data.message_id) {
-          setMessages((prevMessages) =>
-            prevMessages.map((message) =>
-              message.id === data.message_id
-                ? {
-                    ...message,
-                    readers_count: data.readers_count,
-                    total_group_members: data.total_group_members,
-                  }
-                : message
-            )
-          );
-        } else if (data.message) {
-          setMessages((prevMessages) => {
-            const existingIndex = prevMessages.findIndex(
-              (message) => message && message.id === data.message.id
-            );
-            if (existingIndex !== -1) {
-              const updatedMessages = [...prevMessages];
-              updatedMessages[existingIndex] = data.message;
-              return updatedMessages;
-            } else {
-              return [...prevMessages, data.message];
+        console.log("受信データ: ", data);
+
+        switch (data.action) {
+          case "delete":
+            if (data.message_id) {
+              setMessages((prevMessages) =>
+                prevMessages.filter((message) => message.id !== data.message_id)
+              );
             }
-          });
-          clearNewMessages();
+            break;
+
+          case "update_read_count":
+            if (data.message_id) {
+              console.log(
+                `メッセージID ${data.message_id} の既読カウントが更新されました`
+              );
+
+              setMessages((prevMessages) => {
+                const updatedMessages = prevMessages.map((message) =>
+                  message.id === data.message_id &&
+                  message.readers_count !== data.readers_count
+                    ? {
+                        ...message,
+                        readers_count: data.readers_count,
+                        total_group_members: data.total_group_members,
+                      }
+                    : message
+                );
+
+                console.log(
+                  "既読カウント更新後のメッセージリスト: ",
+                  updatedMessages
+                );
+
+                return updatedMessages;
+              });
+            }
+            break;
+
+          default:
+            if (data.message) {
+              setMessages((prevMessages) => {
+                const existingMessage = prevMessages.find(
+                  (message) => message.id === data.message.id
+                );
+
+                if (existingMessage) {
+                  const updatedMessages = prevMessages.map((message) =>
+                    message.id === data.message.id
+                      ? { ...message, ...data.message }
+                      : message
+                  );
+                  console.log("重複メッセージを更新しました: ", data.message);
+                  return updatedMessages;
+                } else {
+                  console.log(
+                    "新しいメッセージが追加されました: ",
+                    data.message
+                  );
+                  return [...prevMessages, data.message];
+                }
+              });
+
+              if (data.message && data.message.sender_id !== user.id) {
+                console.log(
+                  `メッセージ ${data.message.id} の既読通知を送信します`
+                );
+                markMessageAsRead(data.message.id);
+              }
+
+              clearNewMessages();
+            }
         }
+
         scrollToForm();
       },
       connected() {
@@ -154,6 +251,7 @@ const GroupChatDetail: React.FC = () => {
 
     return () => {
       channel.unsubscribe();
+      cableRef.current = null;
     };
   }, [
     fetchGroupData,
@@ -163,6 +261,7 @@ const GroupChatDetail: React.FC = () => {
     groupId,
     clearNewMessages,
     scrollToForm,
+    markMessageAsRead,
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -191,72 +290,54 @@ const GroupChatDetail: React.FC = () => {
         const text = await response.text();
         throw new Error(text);
       }
-      const messageData = await response.json();
+      const data = await response.json();
+      setMessages((prevMessages) => {
+        const existingMessage = prevMessages.find(
+          (message) => message.id === data.message.id
+        );
+
+        if (existingMessage) {
+          return prevMessages.map((message) =>
+            message.id === data.message.id ? data.message : message
+          );
+        } else {
+          return [...prevMessages, data.message];
+        }
+      });
       setEditingMessageId(null);
       setNewMessage("");
       scrollToForm();
-      console.log("メッセージを送信しました");
+      console.log("メッセージを送信しました: ", data.message);
 
-      // メッセージ送信後に送信者を既読にする処理を追加
-      if (messageData.message && user) {
-        await markMessageAsRead(messageData.message.id);
-      }
+      markMessageAsRead(data.message.id);
     } catch (error) {
-      console.error("フェッチ操作に問題がありました:", error);
-    }
-  };
-
-  // 送信者がメッセージを既読にする処理
-  const markMessageAsRead = async (messageId: number) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/groups/mark_as_read`, // エンドポイントを正しい形式に修正
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ message_id: messageId, group_id: groupId }), // 必要なデータを送信
-        }
-      );
-      if (!response.ok) {
-        throw new Error("メッセージの既読処理に失敗しました");
-      }
-      console.log("メッセージを既読にしました: ", messageId);
-    } catch (error) {
-      console.error("既読処理に問題がありました:", error);
+      console.error("送信エラーが発生しました:", error);
     }
   };
 
   const handleEdit = (messageId: number, currentContent: string) => {
-    setEditingMessageId(messageId);
     setNewMessage(currentContent);
+    setEditingMessageId(messageId);
+    inputRef.current?.focus();
     scrollToForm();
   };
 
   const handleCancel = () => {
-    setEditingMessageId(null);
     setNewMessage("");
+    setEditingMessageId(null);
   };
 
   const handleDelete = async (messageId: number) => {
-    if (window.confirm("このメッセージを削除してもよろしいですか？")) {
+    const confirmDelete = window.confirm("本当に削除しますか？");
+    if (confirmDelete) {
       try {
-        const response = await fetch(
+        await fetch(
           `http://localhost:3000/groups/${groupId}/messages/${messageId}`,
           {
             method: "DELETE",
             credentials: "include",
-            headers: {
-              "Content-Type": "application/json",
-            },
           }
         );
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(text);
-        }
         setMessages((prevMessages) =>
           prevMessages.filter((message) => message.id !== messageId)
         );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useEffect, useCallback } from "react";
 import { DirectMessage, Message } from "../types/componentTypes";
 import useMessageStatusChannel from "../hooks/useMessageStatusChannel";
 import { createConsumer } from "@rails/actioncable";
@@ -20,31 +20,9 @@ const MessageList: React.FC<MessageListProps> = ({
   user,
   chatType,
 }) => {
-  const [updatedMessages, setUpdatedMessages] = useState(messages);
-
-  // 初期メッセージのセット
-  useEffect(() => {
-    setUpdatedMessages((prevMessages) => {
-      const newMessages = messages.filter(
-        (newMessage) =>
-          !prevMessages.some((message) => message.id === newMessage.id)
-      );
-      const mergedMessages = [...prevMessages, ...newMessages];
-
-      console.log("初期メッセージがセットされました:", mergedMessages);
-      return mergedMessages;
-    });
-  }, [messages]);
-
+  // メッセージステータスの更新
   const updateMessageStatus = useCallback(
     (messageId: number, status: string) => {
-      setUpdatedMessages((prevMessages) =>
-        prevMessages.map((message) =>
-          message.id === messageId
-            ? { ...message, is_read: status === "read" }
-            : message
-        )
-      );
       console.log(
         `メッセージID: ${messageId} の既読状態が更新されました: ${
           status === "read" ? "既読" : "未読"
@@ -54,6 +32,7 @@ const MessageList: React.FC<MessageListProps> = ({
     []
   );
 
+  // メッセージを既読としてマーク
   const markMessageAsRead = useCallback(
     async (messageId: number) => {
       try {
@@ -68,21 +47,9 @@ const MessageList: React.FC<MessageListProps> = ({
     [updateMessageStatus]
   );
 
+  // 新しいメッセージの処理
   const handleNewMessage = useCallback(
     (newMessage: DirectMessage) => {
-      setUpdatedMessages((prevMessages) => {
-        const messageExists = prevMessages.some(
-          (message) => message.id === newMessage.id
-        );
-        if (!messageExists) {
-          return [...prevMessages, newMessage];
-        } else {
-          return prevMessages.map((message) =>
-            message.id === newMessage.id ? newMessage : message
-          );
-        }
-      });
-
       if (newMessage.recipient_id === user.id) {
         markMessageAsRead(newMessage.id);
       }
@@ -90,8 +57,10 @@ const MessageList: React.FC<MessageListProps> = ({
     [markMessageAsRead, user.id]
   );
 
+  // メッセージのステータスをリアルタイムに更新するチャネルを使用
   useMessageStatusChannel(user.id, updateMessageStatus);
 
+  // WebSocket接続の設定
   useEffect(() => {
     const cable = createConsumer("ws://localhost:3000/cable");
 
@@ -117,9 +86,10 @@ const MessageList: React.FC<MessageListProps> = ({
     };
   }, [user.id, handleNewMessage, updateMessageStatus]);
 
+  // メッセージリストの表示
   return (
     <ul>
-      {updatedMessages.map((message, index) => {
+      {messages.map((message, index) => {
         const senderId = message.sender_id;
         const senderName = message.sender_name;
         const messageClass = senderId === user?.id ? "right" : "left";
