@@ -1,4 +1,4 @@
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState } from "react";
 import { DirectMessage, Message } from "../types/componentTypes";
 import useMessageStatusChannel from "../hooks/useMessageStatusChannel";
 import { createConsumer } from "@rails/actioncable";
@@ -20,6 +20,9 @@ const MessageList: React.FC<MessageListProps> = ({
   user,
   chatType,
 }) => {
+  const [updatedMessages, setUpdatedMessages] =
+    useState<(Message | DirectMessage)[]>(messages);
+
   // メッセージステータスの更新
   const updateMessageStatus = useCallback(
     (messageId: number, status: string) => {
@@ -27,6 +30,15 @@ const MessageList: React.FC<MessageListProps> = ({
         `メッセージID: ${messageId} の既読状態が更新されました: ${
           status === "read" ? "既読" : "未読"
         }`
+      );
+
+      // メッセージの既読状態を更新
+      setUpdatedMessages((prevMessages) =>
+        prevMessages.map((message) =>
+          message.id === messageId
+            ? { ...message, is_read: status === "read" }
+            : message
+        )
       );
     },
     []
@@ -86,10 +98,15 @@ const MessageList: React.FC<MessageListProps> = ({
     };
   }, [user.id, handleNewMessage, updateMessageStatus]);
 
+  // messagesが更新されたときにupdatedMessagesを更新
+  useEffect(() => {
+    setUpdatedMessages(messages);
+  }, [messages]);
+
   // メッセージリストの表示
   return (
     <ul>
-      {messages.map((message, index) => {
+      {updatedMessages.map((message, index) => {
         const senderId = message.sender_id;
         const senderName = message.sender_name;
         const messageClass = senderId === user?.id ? "right" : "left";
