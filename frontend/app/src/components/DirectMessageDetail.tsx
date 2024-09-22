@@ -313,6 +313,7 @@ const DirectMessageDetail: React.FC = () => {
         handleEdit={handleEdit}
         handleDelete={handleDelete}
         user={user}
+        chatType="direct"
       />
       <MessageForm
         newMessage={newMessage}

@@ -6,6 +6,11 @@ class DirectMessagesController < ApplicationController
   def index
     direct_messages = DirectMessage.where("sender_id = ? OR recipient_id = ?", current_user.id, current_user.id)
                                    .includes(:sender, :recipient)
+
+    direct_messages.each do |message|
+      mark_message_as_read(message)
+    end
+
     direct_messages_with_usernames = direct_messages.map do |dm|
       format_direct_message(dm)
     end
@@ -19,7 +24,14 @@ class DirectMessagesController < ApplicationController
       direct_message.sender_id, direct_message.recipient_id,
       direct_message.recipient_id, direct_message.sender_id
     ).order(:created_at)
-    render json: { direct_messages: related_messages.map { |dm| format_direct_message(dm) } }
+
+    related_messages.each do |message|
+      mark_message_as_read(message)
+    end
+
+    render json: {
+      direct_messages: related_messages.map { |dm| format_direct_message(dm) },
+    }
   end
 
   def create
@@ -77,6 +89,17 @@ class DirectMessagesController < ApplicationController
     end
   end
 
+  def mark_as_read
+    message_ids = params[:message_ids]
+    messages = DirectMessage.where(id: message_ids, recipient_id: current_user.id)
+
+    messages.each do |message|
+      mark_message_as_read(message)
+    end
+
+    head :ok
+  end
+
   private
 
   def direct_message_params
@@ -104,7 +127,8 @@ class DirectMessagesController < ApplicationController
       sender_name: direct_message.sender.name,
       recipient_name: direct_message.recipient.name,
       created_at: direct_message.created_at.strftime("%Y-%m-%d %H:%M"),
-      edited: direct_message.updated_at > direct_message.created_at
+      edited: direct_message.updated_at > direct_message.created_at,
+      is_read: message_read_by_recipient?(direct_message)
     }
   end
 
@@ -123,5 +147,23 @@ class DirectMessagesController < ApplicationController
 
   def redis
     @redis ||= Redis.new
+  end
+
+  def mark_message_as_read(message)
+    return if message.read_by?(current_user)
+
+    message.read_receipts.create!(user: current_user)
+
+    # 既読情報を送信者に通知
+    Rails.logger.info "Broadcasting read status for message #{message.id} to user #{message.sender_id}"
+    ActionCable.server.broadcast("message_status_channel_#{message.sender_id}", {
+      message_id: message.id,
+      status: "read",
+      recipient_id: current_user.id
+    })
+  end
+
+  def message_read_by_recipient?(message)
+    ReadReceipt.exists?(user_id: message.recipient_id, read_receiptable: message)
   end
 end

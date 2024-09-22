@@ -1,0 +1,11 @@
+# Read about fixtures at https://api.rubyonrails.org/classes/ActiveRecord/FixtureSet.html
+
+one:
+  user: one
+  read_receiptable: one
+  read_receiptable_type: Read receiptable
+
+two:
+  user: two
+  read_receiptable: two
+  read_receiptable_type: Read receiptable

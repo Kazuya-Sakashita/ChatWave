@@ -63,6 +63,7 @@ export type DirectMessage = {
   recipient_name: string; // 受信者の名前
   created_at: string; // 作成日時
   edited?: boolean; // 編集されたかどうか
+  is_read?: boolean; // 既読かどうかを表すプロパティを追加
 };
 
 // Message型を定義
@@ -74,6 +75,9 @@ export type Message = {
   created_at: string; // 作成日時
   edited?: boolean; // 編集されたかどうか
   deleted?: boolean; // 削除されたかどうか
+  is_read?: boolean; // 既読かどうかを表すプロパティを追加
+  readers_count?: number;
+  total_group_members?: number;
 };
 
 // GroupChatDetailのローカルステートの型を定義
@@ -116,6 +120,9 @@ export interface MessageListProps {
   handleEdit: (messageId: number, currentContent: string) => void;
   handleDelete: (messageId: number) => void;
   user: any; // ユーザーの型定義
+  chatType: "direct" | "group"; // chatTypeを追加
+  groupId?: string; // グループIDをオプショナルに追加
+  totalGroupMembers?: number;
 }
 
 // Profileの型を定義

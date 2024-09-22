@@ -5,7 +5,7 @@ class MessageChannel < ApplicationCable::Channel
   end
 
   def unsubscribed
-    # クリーンアップ処理
+    stop_all_streams
   end
 
   def receive(data)

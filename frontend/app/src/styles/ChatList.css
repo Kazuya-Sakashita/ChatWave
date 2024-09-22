@@ -20,7 +20,6 @@
 .chat-list li {
   margin: 10px 0;
   padding: 10px;
-  background-color: #fff;
   border-radius: 4px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   transition: background-color 0.3s ease;
@@ -75,4 +74,43 @@
 
 .cancel-button:hover {
   background-color: #da190b;
+}
+
+/* メッセージリスト内のコンテンツスタイル */
+.message .content {
+  display: flex;
+  align-items: center;
+}
+
+/* 既読・未読のステータススタイル */
+.read-status {
+  margin-right: 10px; /* 既読とメッセージの間の余白 */
+  background-color: transparent; /* 既読の背景色をなしにする */
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* 自分の送信したメッセージのスタイル */
+.message.sent .message-body {
+  background-color: #d1e7dd; /* 自分のメッセージの背景色を薄いグリーンに */
+  border: 1px solid #badbcc; /* 薄いグリーンのボーダー */
+  color: #0f5132; /* テキストの色を濃いグリーンに */
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* 他の人が送信したメッセージのスタイル */
+.message.received .message-body {
+  background-color: #f0f0f0; /* メッセージの背景色をグレーに */
+  border: 1px solid #ccc; /* グレーのボーダー */
+  color: #333; /* テキストの色をダークグレーに */
+  padding: 10px;
+  border-radius: 8px;
+}
+
+/* 編集済みのメッセージを表すスタイル */
+.message-body span.edited {
+  font-size: 0.9em;
+  color: #888;
+  margin-left: 10px;
 }

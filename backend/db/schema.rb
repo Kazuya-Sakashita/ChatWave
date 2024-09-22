@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_08_10_225322) do
+ActiveRecord::Schema[7.0].define(version: 2024_08_16_223903) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
@@ -85,6 +85,17 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_10_225322) do
     t.index ["user_id"], name: "index_profiles_on_user_id"
   end
 
+  create_table "read_receipts", force: :cascade do |t|
+    t.bigint "user_id", null: false
+    t.string "read_receiptable_type", null: false
+    t.bigint "read_receiptable_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["read_receiptable_type", "read_receiptable_id"], name: "index_read_receipts_on_read_receiptable"
+    t.index ["user_id", "read_receiptable_type", "read_receiptable_id"], name: "index_read_receipts_on_user_and_read_receiptable", unique: true
+    t.index ["user_id"], name: "index_read_receipts_on_user_id"
+  end
+
   create_table "users", force: :cascade do |t|
     t.string "email", default: "", null: false
     t.string "encrypted_password", default: "", null: false
@@ -114,4 +125,5 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_10_225322) do
   add_foreign_key "messages", "users", column: "sender_id"
   add_foreign_key "notification_settings", "users"
   add_foreign_key "profiles", "users"
+  add_foreign_key "read_receipts", "users"
 end
