@@ -12,8 +12,15 @@ const useMessageStatusChannel = (
       { channel: "MessageStatusChannel", user_id: userId },
       {
         received: (data) => {
+          // データの内容を確認
           console.log(`Received data from MessageStatusChannel:`, data);
-          onUpdateStatus(data.message_id, data.status);
+
+          if (data.message_id && data.status) {
+            // 状態が "read" の場合に既読を更新
+            onUpdateStatus(data.message_id, data.status);
+          } else {
+            console.error("Invalid data received:", data);
+          }
         },
         connected() {
           console.log(`Connected to MessageStatusChannel for user ${userId}`);
