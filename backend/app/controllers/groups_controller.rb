@@ -1,6 +1,7 @@
 class GroupsController < ApplicationController
   before_action :authenticate_user!
   before_action :set_group, only: [:show, :create_message, :update_message, :destroy_message, :clear_new_messages]
+  before_action :check_membership, only: [:show, :create_message, :update_message, :destroy_message, :clear_new_messages]
 
   def show
     messages = @group.messages.includes(:sender).map do |message|
@@ -167,6 +168,12 @@ class GroupsController < ApplicationController
     @group = Group.find_by(id: params[:group_id] || params[:id])
     unless @group
       render json: { error: "Group not found" }, status: :not_found
+    end
+  end
+
+  def check_membership
+    unless GroupMember.exists?(group_id: @group.id, user_id: current_user.id)
+      render json: { error: "このグループに参加していません。" }, status: :forbidden
     end
   end
 
