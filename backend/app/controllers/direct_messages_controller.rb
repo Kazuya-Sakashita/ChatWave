@@ -161,6 +161,12 @@ class DirectMessagesController < ApplicationController
       status: "read",
       recipient_id: current_user.id
     })
+
+    # 全クライアントに既読情報をブロードキャスト
+    ActionCable.server.broadcast "direct_messages:#{message.sender_id}", {
+      direct_message: format_direct_message(message),
+      action: "update_read_status"
+    }
   end
 
   def message_read_by_recipient?(message)

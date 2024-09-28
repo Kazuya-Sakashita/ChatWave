@@ -27,19 +27,36 @@ const MessageList: React.FC<MessageListProps> = ({
   const updateMessageStatus = useCallback(
     (messageId: number, status: string) => {
       console.log(
-        `メッセージID: ${messageId} の既読状態が更新されました: ${
+        `メッセージID: ${messageId} のステータスが更新されます: ${
           status === "read" ? "既読" : "未読"
         }`
       );
 
-      // メッセージの既読状態を更新
-      setUpdatedMessages((prevMessages) =>
-        prevMessages.map((message) =>
+      // ステータス変更前のメッセージリストの状態を表示
+      setUpdatedMessages((prevMessages) => {
+        console.log("ステータス変更前のメッセージリスト: ", prevMessages);
+
+        // 更新対象のメッセージが含まれるか確認
+        const messageExists = prevMessages.some(
+          (message) => message.id === messageId
+        );
+
+        // メッセージが存在しない場合は何もしない
+        if (!messageExists) {
+          return prevMessages;
+        }
+
+        const updatedMessages = prevMessages.map((message) =>
           message.id === messageId
             ? { ...message, is_read: status === "read" }
             : message
-        )
-      );
+        );
+
+        // ステータス変更後のメッセージリストの状態を表示
+        console.log("ステータス変更後のメッセージリスト: ", updatedMessages);
+
+        return updatedMessages;
+      });
     },
     []
   );
@@ -62,6 +79,9 @@ const MessageList: React.FC<MessageListProps> = ({
   // 新しいメッセージの処理
   const handleNewMessage = useCallback(
     (newMessage: DirectMessage) => {
+      setUpdatedMessages((prevMessages) => [...prevMessages, newMessage]);
+
+      // 受信者が現在のユーザーであれば既読にする
       if (newMessage.recipient_id === user.id) {
         markMessageAsRead(newMessage.id);
       }
@@ -84,8 +104,11 @@ const MessageList: React.FC<MessageListProps> = ({
 
           if (data.action === "create") {
             handleNewMessage(data.direct_message);
-          } else if (data.action === "read") {
-            updateMessageStatus(data.message_id, data.status);
+          } else if (data.action === "update_read_status") {
+            updateMessageStatus(
+              data.direct_message.id,
+              data.direct_message.is_read ? "read" : "unread"
+            );
           }
         },
       }
