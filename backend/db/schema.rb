@@ -10,9 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2024_08_16_223903) do
+ActiveRecord::Schema[7.0].define(version: 2024_09_28_221651) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
+
+  create_table "block_relationships", force: :cascade do |t|
+    t.bigint "blocker_id", null: false
+    t.bigint "blocked_id", null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["blocked_id"], name: "index_block_relationships_on_blocked_id"
+    t.index ["blocker_id", "blocked_id"], name: "index_block_relationships_on_blocker_id_and_blocked_id", unique: true
+    t.index ["blocker_id"], name: "index_block_relationships_on_blocker_id"
+  end
 
   create_table "direct_messages", force: :cascade do |t|
     t.bigint "sender_id", null: false
@@ -30,6 +40,10 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_16_223903) do
     t.boolean "confirmed", default: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.string "state", default: "pending"
+    t.datetime "accepted_at"
+    t.datetime "rejected_at"
+    t.datetime "blocked_at"
     t.index ["friend_id"], name: "index_friends_on_friend_id"
     t.index ["user_id", "friend_id"], name: "index_friends_on_user_id_and_friend_id", unique: true
     t.index ["user_id"], name: "index_friends_on_user_id"
@@ -115,6 +129,8 @@ ActiveRecord::Schema[7.0].define(version: 2024_08_16_223903) do
     t.index ["reset_password_token"], name: "index_users_on_reset_password_token", unique: true
   end
 
+  add_foreign_key "block_relationships", "users", column: "blocked_id"
+  add_foreign_key "block_relationships", "users", column: "blocker_id"
   add_foreign_key "direct_messages", "users", column: "recipient_id"
   add_foreign_key "direct_messages", "users", column: "sender_id"
   add_foreign_key "friends", "users"

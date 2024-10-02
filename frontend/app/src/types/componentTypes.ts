@@ -173,3 +173,37 @@ export interface MessageProviderProps {
 export interface NotificationSetting {
   enabled: boolean;
 }
+
+export interface Friend {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface FriendRequest {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  recipient_id: number;
+  status: "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
+export interface Friend {
+  id: number;
+  name: string;
+  email: string;
+  confirmed: boolean;
+  // is_senderを追加
+  is_sender?: boolean;
+}
+export interface FriendsResponse {
+  confirmed_friends: Friend[];
+  pending_requests: Friend[];
+}

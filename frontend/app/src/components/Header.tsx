@@ -55,6 +55,13 @@ const Header: React.FC = () => {
               <li>
                 <Link to="/profile">プロフィール</Link>
               </li>
+              <li>
+                {/* フレンド申請ページへのリンクを追加 */}
+                <Link to="/send-friend-request">フレンド申請</Link>
+              </li>
+              <li>
+                <Link to="/friends">フレンド一覧</Link>
+              </li>
             </>
           ) : (
             <>

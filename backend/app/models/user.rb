@@ -18,6 +18,18 @@ class User < ApplicationRecord
   has_many :received_direct_messages, class_name: 'DirectMessage', foreign_key: 'recipient_id'
   has_one :notification_setting, dependent: :destroy
 
+  # 自分がブロックしているユーザーとの関連付け
+  has_many :active_block_relationships, class_name: 'BlockRelationship',
+    foreign_key: 'blocker_id',
+    dependent: :destroy
+  has_many :blocking, through: :active_block_relationships, source: :blocked
+
+# 自分がブロックされているユーザーとの関連付け
+  has_many :passive_block_relationships, class_name: 'BlockRelationship',
+    foreign_key: 'blocked_id',
+    dependent: :destroy
+  has_many :blockers, through: :passive_block_relationships, source: :blocker
+
 
   after_create :create_notification_setting_with_default
 
@@ -37,5 +49,20 @@ class User < ApplicationRecord
 
   def create_notification_setting_with_default
     create_notification_setting(enabled: true)
+  end
+
+  # ブロックするメソッド
+  def block(other_user)
+      blocking << other_user unless blocking?(other_user)
+  end
+
+  # ブロック解除するメソッド
+  def unblock(other_user)
+    blocking.delete(other_user) if blocking?(other_user)
+  end
+
+  # すでにブロックしているかどうかを確認
+  def blocking?(other_user)
+    blocking.include?(other_user)
   end
 end

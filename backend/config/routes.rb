@@ -14,6 +14,17 @@ Rails.application.routes.draw do
   }
   resource :profile, only: [:new, :create, :edit, :update, :show]
   resource :notification_setting, only: [:show, :update]
+  resources :friends, only: [:index, :create, :update] do
+    member do
+      patch 'update', to: 'friends#update'
+      patch :block # ブロック処理のルート
+      patch :unblock # ブロック解除処理のルート
+      delete :cancel # フレンド申請キャンセルのルートを追加
+    end
+    collection do
+      get :blocked_friends # ブロックリストを取得するルート
+    end
+  end
 
   resources :chats, only: [:index]
   resources :groups, only: [:show] do
@@ -44,6 +55,9 @@ Rails.application.routes.draw do
     end
   end
   get '/me', to: 'users#show'
+
+    # ユーザーリストを取得するルートを追加
+    resources :users, only: [:index]
 
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 

@@ -9,6 +9,7 @@ GroupMember.delete_all
 Group.delete_all
 DirectMessage.delete_all
 Message.delete_all
+Friend.delete_all
 
 # デフォルトアバターのパス
 default_avatar_path = Rails.root.join('app/assets/images/default_avatar.jpeg')
@@ -89,3 +90,16 @@ messages = []
 end
 
 Message.create!(messages)
+
+# フレンド関係の作成
+# user_id と friend_id を逆にすると、逆方向のリクエストも登録されることがあります
+# フレンド関係の作成
+friend1 = Friend.create!(user_id: users[0].id, friend_id: users[1].id, state: 'pending')
+friend2 = Friend.create!(user_id: users[1].id, friend_id: users[2].id, state: 'pending')
+friend3 = Friend.create!(user_id: users[0].id, friend_id: users[2].id, state: 'pending')
+
+# フレンド申請の承認 (accepted_at にタイムスタンプを追加)
+friend1.accept!
+friend2.accept!
+
+# フレンド申請のステータス変更が発生した日時はaccepted_atやrejected_atに記録される
