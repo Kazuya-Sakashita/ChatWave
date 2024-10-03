@@ -1,0 +1,5 @@
+.disabled-button {
+  background-color: lightgray; /* ボタンの背景色を薄いグレーに */
+  cursor: not-allowed; /* カーソルが許可されていない状態を表示 */
+  color: #666; /* ボタンのテキストの色も変更 */
+}

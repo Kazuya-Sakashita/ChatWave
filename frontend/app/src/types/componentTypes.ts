@@ -185,7 +185,7 @@ export interface FriendRequest {
   sender_id: number;
   sender_name: string;
   recipient_id: number;
-  status: "pending" | "accepted" | "rejected";
+  recipient_name?: string;
   created_at: string;
 }
 
