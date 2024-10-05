@@ -1,21 +1,17 @@
 class UsersController < ApplicationController
   before_action :authenticate_user!
 
-  # 全ユーザーのリストを返すアクション
   def index
-    # 自分自身を除外
-    users = User.where.not(id: current_user.id)
+    friends = current_user.friendships.where(state: ['accepted', 'pending']).pluck(:friend_id)
+    blocked_users = current_user.blocking.pluck(:id)
+    rejected_friendships = current_user.friendships.where(state: 'rejected').pluck(:friend_id)
 
-    # 既にフレンドになっているユーザーを除外
-    friend_ids = current_user.friends.pluck(:id)
+    # 自分以外のユーザーを取得
+    users = User.where.not(id: friends + blocked_users + [current_user.id])
+                .or(User.where(id: rejected_friendships))
 
-    # 自分がブロックしている、またはブロックされているユーザーを除外
-    blocked_user_ids = current_user.blocking.pluck(:id) + current_user.blockers.pluck(:id)
-
-    # 除外リストを適用してフィルタリング
-    users = users.where.not(id: friend_ids + blocked_user_ids)
-
-    render json: users.select(:id, :name)
+    # avatar_url を含めたユーザー情報を返す
+    render json: users.map { |user| user.as_json(only: [:id, :name]).merge(avatar_url: user.avatar_url) }
   end
 
 
@@ -25,14 +21,14 @@ class UsersController < ApplicationController
 
   private
 
-  # 自分自身、既にフレンドになっているユーザー、ブロック関係のユーザーを除いたユーザーを取得
+  # 自分自身、既にフレンドになっているユーザー、ブロック関係のユーザー、ペンディング状態のユーザーを除いたユーザーを取得
   def available_users
     User.where.not(id: excluded_user_ids)
   end
 
   # 除外するユーザーIDのリストを取得
   def excluded_user_ids
-    friend_ids + blocked_user_ids + [current_user.id]
+    friend_ids + blocked_user_ids + pending_request_ids + [current_user.id]
   end
 
   # フレンド関係にあるユーザーのIDを取得
@@ -46,5 +42,10 @@ class UsersController < ApplicationController
   # ブロックしている、もしくはブロックされているユーザーのIDを取得
   def blocked_user_ids
     current_user.blocking.pluck(:id) + current_user.blocked_by.pluck(:id)
+  end
+
+  # 既にペンディング状態のフレンド申請を送信したユーザーのIDを取得
+  def pending_request_ids
+    current_user.friendships.where(state: 'pending').pluck(:friend_id)
   end
 end

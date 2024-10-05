@@ -17,20 +17,24 @@ class FriendsController < ApplicationController
   end
 
   def create
-    # 既にフレンド申請が存在するか確認
-    if Friend.exists?(user_id: current_user.id, friend_id: params[:friend_id]) ||
-       Friend.exists?(user_id: params[:friend_id], friend_id: current_user.id)
-      render json: { error: '既にフレンド申請が存在します。' }, status: :unprocessable_entity
-      return
-    end
+    friend = User.find(params[:friend_id])
 
-    # フレンド申請を新規作成
-    @friend_request = Friend.new(user_id: current_user.id, friend_id: params[:friend_id], state: 'pending')
+    # リジェクトされたリクエストがあるか確認
+    existing_request = Friend.find_by(user_id: current_user.id, friend_id: friend.id, state: 'rejected')
 
-    if @friend_request.save
-      render json: { message: 'フレンド申請を送信しました。' }, status: :created
+    if existing_request
+      # リクエストがリジェクトされていた場合は、ステータスを "pending" に更新
+      existing_request.update(state: 'pending')
+      render json: { message: 'フレンド申請が再度送信されました。' }, status: :ok
     else
-      render json: { error: @friend_request.errors.full_messages }, status: :unprocessable_entity
+      # 新しいリクエストを作成（リジェクトされていなければ通常の処理）
+      new_request = Friend.new(user_id: current_user.id, friend_id: friend.id, state: 'pending')
+
+      if new_request.save
+        render json: { message: 'フレンド申請が送信されました。' }, status: :created
+      else
+        render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
+      end
     end
   end
 
@@ -88,6 +92,12 @@ class FriendsController < ApplicationController
     else
       render json: { error: 'ユーザーのブロック解除に失敗しました。' }, status: :unprocessable_entity
     end
+  end
+
+  # 承認待ちフレンドリクエストのリストを取得するアクション
+  def pending_requests
+    pending_requests = Friend.where(friend_id: current_user.id, state: 'pending')
+    render json: pending_requests
   end
 
   # ブロックされたフレンドのリストを取得

@@ -17,7 +17,7 @@ import ProfilePage from "./components/ProfilePage";
 import ProfileEditPage from "./components/ProfileEditPage";
 import { fetchNotificationSetting } from "./store/notificationSlice";
 import FriendList from "./components/FriendList"; // フレンド一覧ページ
-import FriendRequestList from "./components/FriendRequestList"; // フレンド申請ページ
+import FriendRequestList from "./components/FriendRequestPage"; // フレンド申請ページ
 import SendFriendRequest from "./components/SendFriendRequest";
 
 const App: React.FC = () => {
@@ -91,9 +91,6 @@ const App: React.FC = () => {
           <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/friends" element={<FriendList />} />
           <Route path="/send-friend-request" element={<SendFriendRequest />} />
-          {/* フレンドリクエスト */}
-          <Route path="/friend-requests" element={<FriendRequestList />} />{" "}
-          {/* フレンド申請フォームのルート */}
         </Routes>
       </Router>
     </MessageProvider>

@@ -174,12 +174,6 @@ export interface NotificationSetting {
   enabled: boolean;
 }
 
-export interface Friend {
-  id: number;
-  name: string;
-  email: string;
-}
-
 export interface FriendRequest {
   id: number;
   sender_id: number;
@@ -193,6 +187,7 @@ export interface User {
   id: number;
   name: string;
   email: string;
+  avatar_url?: string;
 }
 
 export interface Friend {
@@ -202,8 +197,27 @@ export interface Friend {
   confirmed: boolean;
   // is_senderを追加
   is_sender?: boolean;
+  avatar_url?: string;
 }
 export interface FriendsResponse {
   confirmed_friends: Friend[];
   pending_requests: Friend[];
+}
+
+export interface User {
+  id: number;
+  name: string;
+  avatar_url?: string; // アバター画像用のURL
+}
+
+export interface FriendRequest {
+  id: number;
+  sender_id: number;
+  recipient_id: number;
+  state: "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
+export interface PendingFriendRequest {
+  recipient_id: number;
 }

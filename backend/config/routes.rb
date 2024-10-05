@@ -23,6 +23,7 @@ Rails.application.routes.draw do
     end
     collection do
       get :blocked_friends # ブロックリストを取得するルート
+      get :pending_requests
     end
   end
 

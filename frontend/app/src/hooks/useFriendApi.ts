@@ -269,6 +269,32 @@ const useFriendApi = () => {
     }
   }, []);
 
+  // 新しく追加：承認待ちのフレンドリクエストを取得する関数
+  const getPendingFriendRequests = useCallback(async (): Promise<
+    FriendRequest[]
+  > => {
+    try {
+      const response = await fetch(
+        `http://localhost:3000/friends/pending_requests`,
+        {
+          method: "GET",
+          credentials: "include",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("承認待ちのフレンドリクエストの取得に失敗しました。");
+      }
+
+      return await response.json();
+    } catch (error) {
+      throw error;
+    }
+  }, []);
+
   return {
     sendFriendRequest,
     respondToFriendRequest,
@@ -278,6 +304,7 @@ const useFriendApi = () => {
     getFriendRequests,
     getFriends,
     getBlockedFriends,
+    getPendingFriendRequests,
   };
 };
 

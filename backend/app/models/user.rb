@@ -8,7 +8,12 @@ class User < ApplicationRecord
 
   has_many :sent_messages, class_name: "DirectMessage", foreign_key: "sender_id"
   has_many :received_messages, class_name: "DirectMessage", foreign_key: "recipient_id"
-  has_many :friendships, foreign_key: "user_id", class_name: "Friend"
+  # 自分が送信したフレンドリクエスト
+  has_many :friendships, foreign_key: :user_id, class_name: 'Friend'
+
+  # 他のユーザーが自分に送信したフレンドリクエスト
+  has_many :inverse_friendships, foreign_key: :friend_id, class_name: 'Friend'
+
   has_many :friends, through: :friendships, source: :friend
   has_many :group_memberships, class_name: "GroupMember"
   has_many :groups, through: :group_memberships

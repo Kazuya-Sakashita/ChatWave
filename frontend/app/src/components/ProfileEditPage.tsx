@@ -1,237 +1,200 @@
-import React, { useEffect, useState } from "react";
-import axios from "../api/axiosConfig";
-import { useNavigate } from "react-router-dom";
-import { useForm, Controller } from "react-hook-form";
-import styles from "./ProfileEditPage.module.css"; // CSSファイルをインポート
-import { ProfilePageState } from "../types/componentTypes"; // 型をインポート
+import React, { useEffect, useState, useCallback } from "react";
+import useFriendApi from "../hooks/useFriendApi";
+import { Friend } from "../types/componentTypes";
+import "../components/FriendList.css";
 
-const ProfileEditPage: React.FC = () => {
+const FriendList: React.FC = () => {
   const {
-    control,
-    handleSubmit,
-    setValue,
-    formState: { errors },
-  } = useForm<ProfilePageState>();
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
-  const [profileError, setProfileError] = useState<string | null>(null);
+    getFriends,
+    getBlockedFriends,
+    respondToFriendRequest,
+    blockFriend,
+    unblockFriend,
+  } = useFriendApi();
 
-  const navigate = useNavigate();
+  const [confirmedFriends, setConfirmedFriends] = useState<Friend[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<Friend[]>([]);
+  const [blockedFriends, setBlockedFriends] = useState<Friend[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchFriends = useCallback(async () => {
+    try {
+      const fetchedData = await getFriends();
+      const blockedData = await getBlockedFriends();
+
+      setConfirmedFriends(fetchedData.confirmed_friends);
+      setPendingRequests(fetchedData.pending_requests);
+      setBlockedFriends(blockedData);
+    } catch (error: unknown) {
+      setError("データの取得に失敗しました。");
+    } finally {
+      setLoading(false);
+    }
+  }, [getFriends, getBlockedFriends]);
 
   useEffect(() => {
-    const fetchProfile = async () => {
-      try {
-        const response = await axios.get("/profile");
-        const {
-          full_name,
-          birth_date,
-          gender,
-          phone_number,
-          postal_code,
-          address,
-          avatar_url,
-        } = response.data.profile;
+    fetchFriends();
+  }, [fetchFriends]);
 
-        setValue("fullName", full_name);
-        setValue("birthDate", birth_date);
-        setValue("gender", gender);
-        setValue("phoneNumber", phone_number);
-        setValue("postalCode", postal_code);
-        setValue("address", address);
-        setAvatarUrl(avatar_url);
-      } catch (err) {
-        setProfileError("プロフィール情報の取得に失敗しました");
-      }
-    };
-
-    fetchProfile();
-  }, [setValue]);
-
-  const handleFileChange = (files: FileList | null) => {
-    if (files && files.length > 0) {
-      setValue("avatar", files[0]);
-      setAvatarUrl(URL.createObjectURL(files[0])); // 選択した新しい画像をプレビュー
-    }
-  };
-
-  const onSubmit = async (data: ProfilePageState) => {
-    const formData = new FormData();
-    formData.append("profile[full_name]", data.fullName);
-    formData.append("profile[birth_date]", data.birthDate);
-    formData.append("profile[gender]", data.gender);
-    formData.append("profile[phone_number]", data.phoneNumber);
-    formData.append("profile[postal_code]", data.postalCode);
-    formData.append("profile[address]", data.address);
-    if (data.avatar) {
-      formData.append("profile[avatar]", data.avatar);
-    }
-
+  const handleAccept = async (friendId: number) => {
     try {
-      await axios.put("/profile", formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      navigate("/profile");
-    } catch (err) {
-      setProfileError("プロフィールの更新に失敗しました");
+      await respondToFriendRequest(friendId, "accept");
+      const acceptedFriend = pendingRequests.find((req) => req.id === friendId);
+      if (acceptedFriend) {
+        setConfirmedFriends((prev) => [...prev, acceptedFriend]);
+        setPendingRequests((prev) =>
+          prev.filter((request) => request.id !== friendId)
+        );
+      }
+    } catch (error) {
+      console.error("フレンド承認に失敗しました。");
     }
   };
+
+  const handleReject = async (friendId: number) => {
+    try {
+      await respondToFriendRequest(friendId, "reject");
+      setPendingRequests((prev) =>
+        prev.filter((request) => request.id !== friendId)
+      );
+    } catch (error) {
+      console.error("フレンド拒否に失敗しました。");
+    }
+  };
+
+  const handleBlock = async (friendId: number) => {
+    try {
+      await blockFriend(friendId);
+      const blockedFriend = confirmedFriends.find(
+        (friend) => friend.id === friendId
+      );
+      setConfirmedFriends((prev) =>
+        prev.filter((friend) => friend.id !== friendId)
+      );
+      if (blockedFriend) {
+        setBlockedFriends((prev) => [...prev, blockedFriend]);
+      }
+    } catch (error) {
+      console.error("ブロックに失敗しました。");
+    }
+  };
+
+  const handleUnblock = async (friendId: number) => {
+    try {
+      await unblockFriend(friendId);
+      setBlockedFriends((prev) =>
+        prev.filter((friend) => friend.id !== friendId)
+      );
+      await fetchFriends();
+    } catch (error) {
+      console.error("ブロック解除に失敗しました。");
+    }
+  };
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>{error}</p>;
 
   return (
-    <div className={styles["profile-edit-container"]}>
-      <h1>プロフィール編集</h1>
-      {profileError && <p style={{ color: "red" }}>{profileError}</p>}
-      <form
-        onSubmit={handleSubmit(onSubmit)}
-        className={styles["profile-edit-form"]}
-      >
-        <div>
-          <label>フルネーム:</label>
-          <Controller
-            name="fullName"
-            control={control}
-            defaultValue=""
-            rules={{ required: "フルネームは必須です" }}
-            render={({ field }) => <input type="text" {...field} />}
-          />
-          {errors.fullName && (
-            <p style={{ color: "red" }}>{errors.fullName.message}</p>
-          )}
-        </div>
-        <div>
-          <label>生年月日:</label>
-          <Controller
-            name="birthDate"
-            control={control}
-            defaultValue=""
-            rules={{ required: "生年月日は必須です" }}
-            render={({ field }) => <input type="date" {...field} />}
-          />
-          {errors.birthDate && (
-            <p style={{ color: "red" }}>{errors.birthDate.message}</p>
-          )}
-        </div>
-        <div>
-          <Controller
-            name="gender"
-            control={control}
-            defaultValue=""
-            rules={{ required: "性別は必須です" }}
-            render={({ field }) => (
-              <div>
-                <label>性別:</label>
-                <div className={styles["gender-options"]}>
-                  <label>
-                    <input
-                      type="radio"
-                      value="male"
-                      onChange={() => field.onChange("male")}
-                      checked={field.value === "male"}
-                    />
-                    男
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="female"
-                      onChange={() => field.onChange("female")}
-                      checked={field.value === "female"}
-                    />
-                    女
-                  </label>
-                  <label>
-                    <input
-                      type="radio"
-                      value="other"
-                      onChange={() => field.onChange("other")}
-                      checked={field.value === "other"}
-                    />
-                    その他
-                  </label>
-                </div>
-                {errors.gender && (
-                  <p style={{ color: "red" }}>{errors.gender.message}</p>
-                )}
-              </div>
-            )}
-          />
+    <div className="friend-list-container">
+      <h2 className="friend-list-title">フレンド一覧</h2>
 
-          {errors.gender && (
-            <p style={{ color: "red" }}>{errors.gender.message}</p>
+      {/* 承認済みのフレンド */}
+      <section className="friend-section">
+        <h3 className="friend-list-subtitle">承認済みのフレンド</h3>
+        <div className="friend-card-container">
+          {confirmedFriends.length > 0 ? (
+            confirmedFriends.map((friend) => (
+              <div key={friend.id} className="friend-card">
+                <img
+                  src={friend.avatar_url || "/default-avatar.png"}
+                  alt={friend.name}
+                  className="friend-avatar"
+                />
+                <p className="friend-name">{friend.name}</p>
+                <div className="friend-actions">
+                  <button
+                    className="friend-button block"
+                    onClick={() => handleBlock(friend.id)}
+                  >
+                    ブロック
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="no-friends-message">フレンドがいません。</p>
           )}
         </div>
-        <div>
-          <label>電話番号:</label>
-          <Controller
-            name="phoneNumber"
-            control={control}
-            defaultValue=""
-            rules={{ required: "電話番号は必須です" }}
-            render={({ field }) => <input type="text" {...field} />}
-          />
-          {errors.phoneNumber && (
-            <p style={{ color: "red" }}>{errors.phoneNumber.message}</p>
+      </section>
+
+      {/* フレンド申請中 */}
+      <section className="friend-section">
+        <h3 className="friend-list-subtitle">フレンド申請中</h3>
+        <div className="friend-card-container">
+          {pendingRequests.length > 0 ? (
+            pendingRequests.map((request) => (
+              <div key={request.id} className="friend-card">
+                <img
+                  src={request.avatar_url || "/default-avatar.png"}
+                  alt={request.name}
+                  className="friend-avatar"
+                />
+                <p className="friend-name">{request.name}</p>
+                <div className="friend-actions">
+                  <button
+                    className="friend-button accept"
+                    onClick={() => handleAccept(request.id)}
+                  >
+                    承認
+                  </button>
+                  <button
+                    className="friend-button reject"
+                    onClick={() => handleReject(request.id)}
+                  >
+                    拒否
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="no-friends-message">申請中のフレンドがいません。</p>
           )}
         </div>
-        <div>
-          <label>郵便番号:</label>
-          <Controller
-            name="postalCode"
-            control={control}
-            defaultValue=""
-            rules={{ required: "郵便番号は必須です" }}
-            render={({ field }) => <input type="text" {...field} />}
-          />
-          {errors.postalCode && (
-            <p style={{ color: "red" }}>{errors.postalCode.message}</p>
+      </section>
+
+      {/* ブロックしたフレンド */}
+      <section className="friend-section">
+        <h3 className="friend-list-subtitle">ブロックしたフレンド</h3>
+        <div className="friend-card-container">
+          {blockedFriends.length > 0 ? (
+            blockedFriends.map((friend) => (
+              <div key={friend.id} className="friend-card blocked-friend">
+                <img
+                  src={friend.avatar_url || "/default-avatar.png"}
+                  alt={friend.name}
+                  className="friend-avatar blocked"
+                />
+                <p className="friend-name">{friend.name}</p>
+                <div className="friend-actions">
+                  <button
+                    className="friend-button unblock"
+                    onClick={() => handleUnblock(friend.id)}
+                  >
+                    ブロック解除
+                  </button>
+                </div>
+              </div>
+            ))
+          ) : (
+            <p className="no-friends-message">
+              ブロックしたフレンドがいません。
+            </p>
           )}
         </div>
-        <div>
-          <label>住所:</label>
-          <Controller
-            name="address"
-            control={control}
-            defaultValue=""
-            rules={{ required: "住所は必須です" }}
-            render={({ field }) => <input type="text" {...field} />}
-          />
-          {errors.address && (
-            <p style={{ color: "red" }}>{errors.address.message}</p>
-          )}
-        </div>
-        <div>
-          <label>プロフィール画像:</label>
-          {avatarUrl && (
-            <div className={styles["avatar-preview"]}>
-              <img
-                src={avatarUrl}
-                alt="現在のプロフィール画像"
-                className={styles["avatar"]}
-              />
-            </div>
-          )}
-          <Controller
-            name="avatar"
-            control={control}
-            defaultValue={null}
-            render={({ field }) => (
-              <input
-                type="file"
-                onChange={(e) => {
-                  field.onChange(e.target.files?.[0]);
-                  handleFileChange(e.target.files);
-                }}
-              />
-            )}
-          />
-          {errors.avatar && (
-            <p style={{ color: "red" }}>{errors.avatar.message}</p>
-          )}
-        </div>
-        <button type="submit">更新</button>
-      </form>
+      </section>
     </div>
   );
 };
 
-export default ProfileEditPage;
+export default FriendList;
