@@ -13,7 +13,10 @@ const FriendList: React.FC = () => {
   } = useFriendApi();
 
   const [confirmedFriends, setConfirmedFriends] = useState<Friend[]>([]);
-  const [pendingRequests, setPendingRequests] = useState<Friend[]>([]);
+  const [pendingRequestsSent, setPendingRequestsSent] = useState<Friend[]>([]); // 送信したフレンド申請
+  const [pendingRequestsReceived, setPendingRequestsReceived] = useState<
+    Friend[]
+  >([]); // 受け取ったフレンド申請
   const [blockedFriends, setBlockedFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,9 +30,10 @@ const FriendList: React.FC = () => {
       console.log("Fetched Friends Data:", fetchedData);
       console.log("Fetched Blocked Friends Data:", blockedData);
 
-      setConfirmedFriends(fetchedData.confirmed_friends);
-      setPendingRequests(fetchedData.pending_requests);
-      setBlockedFriends(blockedData);
+      setConfirmedFriends(fetchedData.confirmed_friends || []);
+      setPendingRequestsSent(fetchedData.pending_requests_sent || []);
+      setPendingRequestsReceived(fetchedData.pending_requests_received || []);
+      setBlockedFriends(blockedData || []);
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error fetching friends:", error.message);
@@ -48,63 +52,41 @@ const FriendList: React.FC = () => {
     fetchFriends();
   }, [fetchFriends]);
 
-  // フレンド承認処理
+  // フレンド申請キャンセル処理（送信した申請）
+  const handleCancelRequest = async (friendId: number) => {
+    try {
+      await respondToFriendRequest(friendId, "cancel");
+      fetchFriends(); // リストをリアルタイム更新
+    } catch (error) {
+      console.error("フレンド申請のキャンセルに失敗しました。", error);
+    }
+  };
+
+  // フレンド承認処理（受け取った申請）
   const handleAccept = async (friendId: number) => {
     try {
-      console.log("Accepting friend request with ID:", friendId);
-      const response = await respondToFriendRequest(friendId, "accept");
-      console.log("Friend request accepted:", response);
-
-      const acceptedFriend = pendingRequests.find((req) => req.id === friendId);
-      if (acceptedFriend) {
-        console.log("Accepted Friend:", acceptedFriend);
-        setConfirmedFriends((prev) => [...prev, acceptedFriend]);
-        setPendingRequests((prev) =>
-          prev.filter((request) => request.id !== friendId)
-        );
-      }
-      await fetchFriends(); // 最新のデータをフェッチ
+      await respondToFriendRequest(friendId, "accept");
+      fetchFriends(); // リストをリアルタイム更新
     } catch (error) {
       console.error("フレンド申請の承認に失敗しました。", error);
     }
   };
 
-  // フレンド拒否処理
+  // フレンド拒否処理（受け取った申請）
   const handleReject = async (friendId: number) => {
     try {
-      console.log("Rejecting friend request with ID:", friendId);
       await respondToFriendRequest(friendId, "reject");
-      setPendingRequests((prev) =>
-        prev.filter((request) => request.id !== friendId)
-      );
-      console.log("Friend request rejected for ID:", friendId);
-      await fetchFriends(); // 最新のデータをフェッチ
+      fetchFriends(); // リストをリアルタイム更新
     } catch (error) {
       console.error("フレンド申請の拒否に失敗しました。", error);
     }
   };
 
-  // フレンドブロック処理
+  // ブロック処理
   const handleBlock = async (friendId: number) => {
     try {
-      console.log("Blocking Friend with ID:", friendId);
       await blockFriend(friendId);
-
-      // 承認済みリストから削除
-      const blockedFriend = confirmedFriends.find(
-        (friend) => friend.id === friendId
-      );
-      if (blockedFriend) {
-        console.log("Blocked Friend:", blockedFriend);
-        setConfirmedFriends((prev) =>
-          prev.filter((friend) => friend.id !== friendId)
-        );
-        setBlockedFriends((prev) => [...prev, blockedFriend]);
-      } else {
-        console.log("Could not find friend in confirmedFriends list.");
-      }
-
-      await fetchFriends(); // 最新のデータをフェッチ
+      fetchFriends(); // ブロック後にリストをリアルタイム更新
     } catch (error) {
       console.error("フレンドのブロックに失敗しました。", error);
     }
@@ -113,13 +95,8 @@ const FriendList: React.FC = () => {
   // ブロック解除処理
   const handleUnblock = async (friendId: number) => {
     try {
-      console.log("Unblocking Friend with ID:", friendId);
       await unblockFriend(friendId);
-      setBlockedFriends((prev) =>
-        prev.filter((friend) => friend.id !== friendId)
-      );
-      console.log("Friend unblocked. Fetching updated friends list...");
-      await fetchFriends(); // 最新のデータをフェッチ
+      fetchFriends(); // ブロック解除後にリストをリアルタイム更新
     } catch (error) {
       console.error("ブロック解除に失敗しました。", error);
     }
@@ -161,14 +138,38 @@ const FriendList: React.FC = () => {
         )}
       </ul>
 
-      <h3 className="friend-list-subtitle">フレンド申請中</h3>
+      <h3 className="friend-list-subtitle">送信したフレンド申請</h3>
       <ul className="friend-list">
-        {pendingRequests.length > 0 ? (
-          pendingRequests.map((request) => (
-            <li key={`pending-${request.id}`} className="friend-list-item">
+        {pendingRequestsSent.length > 0 ? (
+          pendingRequestsSent.map((request) => (
+            <li key={`sent-${request.id}`} className="friend-list-item">
               <div className="friend-info">
                 <p className="friend-name">名前: {request.name}</p>
-                <p className="friend-email">Email: {request.email}</p>
+              </div>
+              <div className="friend-actions">
+                <button
+                  className="friend-button cancel"
+                  onClick={() => handleCancelRequest(request.id)}
+                >
+                  申請をキャンセル
+                </button>
+              </div>
+            </li>
+          ))
+        ) : (
+          <p className="no-friends-message">
+            送信したフレンド申請がありません。
+          </p>
+        )}
+      </ul>
+
+      <h3 className="friend-list-subtitle">受け取ったフレンド申請</h3>
+      <ul className="friend-list">
+        {pendingRequestsReceived.length > 0 ? (
+          pendingRequestsReceived.map((request) => (
+            <li key={`received-${request.id}`} className="friend-list-item">
+              <div className="friend-info">
+                <p className="friend-name">名前: {request.name}</p>
               </div>
               <div className="friend-actions">
                 <button
@@ -187,7 +188,9 @@ const FriendList: React.FC = () => {
             </li>
           ))
         ) : (
-          <p className="no-friends-message">フレンド申請がありません。</p>
+          <p className="no-friends-message">
+            受け取ったフレンド申請がありません。
+          </p>
         )}
       </ul>
 

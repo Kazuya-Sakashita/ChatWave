@@ -44,8 +44,11 @@ const useFriendApi = () => {
   const respondToFriendRequest = useCallback(
     async (id: number, actionType: "accept" | "reject" | "cancel") => {
       try {
+        // actionType をコンソールに表示
+        console.log("Action Type:", actionType);
+
         const response = await fetch(
-          `http://localhost:3000/friends/${id}/update`, // フレンド承認・拒否のエンドポイント修正
+          `http://localhost:3000/friends/${id}`, // フレンド承認・拒否のエンドポイント修正
           {
             method: "PATCH",
             credentials: "include",

@@ -201,6 +201,9 @@ export interface Friend {
 }
 export interface FriendsResponse {
   confirmed_friends: Friend[];
+  pending_requests_sent: Friend[]; // 送信したフレンド申請
+  pending_requests_received: Friend[]; // 受け取ったフレンド申請
+  blocked_friends: Friend[];
   pending_requests: Friend[];
 }
 

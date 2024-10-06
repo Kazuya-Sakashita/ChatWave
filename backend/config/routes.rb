@@ -16,7 +16,7 @@ Rails.application.routes.draw do
   resource :notification_setting, only: [:show, :update]
   resources :friends, only: [:index, :create, :update] do
     member do
-      patch 'update', to: 'friends#update'
+      patch :update  # フレンドリクエストの更新（承認/拒否）
       patch :block # ブロック処理のルート
       patch :unblock # ブロック解除処理のルート
       delete :cancel # フレンド申請キャンセルのルートを追加

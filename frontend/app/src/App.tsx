@@ -17,7 +17,6 @@ import ProfilePage from "./components/ProfilePage";
 import ProfileEditPage from "./components/ProfileEditPage";
 import { fetchNotificationSetting } from "./store/notificationSlice";
 import FriendList from "./components/FriendList"; // フレンド一覧ページ
-import FriendRequestList from "./components/FriendRequestPage"; // フレンド申請ページ
 import SendFriendRequest from "./components/SendFriendRequest";
 
 const App: React.FC = () => {
