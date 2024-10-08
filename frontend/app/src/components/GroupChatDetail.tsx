@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { Group, Message } from "../types/componentTypes";
 import useAuth from "../hooks/useAuth";
 import { createConsumer, Subscription } from "@rails/actioncable";
 import MessageList from "./MessageList";
 import MessageForm from "./MessageForm";
-import "../styles/ChatStyles.css";
+import "../styles/ChatStyles.css"; // スタイルを定義するCSSファイル
 import { useMessageContext } from "../context/MessageContext";
 
 const GroupChatDetail: React.FC = () => {
@@ -15,10 +15,12 @@ const GroupChatDetail: React.FC = () => {
   const [newMessage, setNewMessage] = useState("");
   const [editingMessageId, setEditingMessageId] = useState<number | null>(null);
   const { user, isAuthenticated, isLoading } = useAuth();
+  const [errorMessage, setErrorMessage] = useState<string | null>(null); // エラーメッセージを管理する状態
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { setNewMessages } = useMessageContext();
+  const navigate = useNavigate(); // リダイレクト用
 
   const processedMessageIds = useRef<Set<number>>(new Set());
   const cableRef = useRef<ReturnType<typeof createConsumer> | null>(null); // WebSocket接続管理用の参照
@@ -96,9 +98,21 @@ const GroupChatDetail: React.FC = () => {
           "Content-Type": "application/json",
         },
       });
+
+      if (response.status === 403) {
+        // グループに参加していない場合
+        const data = await response.json();
+        setErrorMessage(data.error);
+        setTimeout(() => {
+          navigate("/"); // ホームにリダイレクト
+        }, 5000); // 5秒後にリダイレクト
+        return;
+      }
+
       if (!response.ok) {
         throw new Error("ネットワーク応答が正常ではありません");
       }
+
       const data = await response.json();
       setGroup(data.group);
 
@@ -123,8 +137,9 @@ const GroupChatDetail: React.FC = () => {
       scrollToForm();
     } catch (error) {
       console.error("フェッチ操作に問題がありました:", error);
+      setErrorMessage("グループデータの取得に失敗しました。");
     }
-  }, [groupId, clearNewMessages, scrollToForm]);
+  }, [groupId, clearNewMessages, scrollToForm, navigate]);
 
   useEffect(() => {
     if (isLoading) return;
@@ -358,6 +373,10 @@ const GroupChatDetail: React.FC = () => {
 
   return (
     <div>
+      {/* エラーメッセージを警告スタイルで表示 */}
+      {errorMessage && (
+        <div className="error-message warning-message">{errorMessage}</div>
+      )}
       <h1>{group?.name}</h1>
       <MessageList
         messages={messages}

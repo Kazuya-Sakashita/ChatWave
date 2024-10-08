@@ -89,3 +89,16 @@
 .message button.delete:active {
   background-color: #bd2130;
 }
+
+/* 警告メッセージを目立たせるスタイル */
+.warning-message {
+  background-color: #ffcccc;
+  color: #cc0000;
+  font-weight: bold;
+  padding: 15px;
+  border-radius: 5px;
+  margin: 10px 0;
+  text-align: center;
+  border: 1px solid #cc0000;
+  font-size: 1.2rem;
+}

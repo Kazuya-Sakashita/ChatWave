@@ -31,6 +31,7 @@ const DirectMessageDetail: React.FC = () => {
     }
   };
 
+  // フェッチしてメッセージを取得
   const fetchDirectMessages = useCallback(async () => {
     if (!messageId) return;
     try {
@@ -50,14 +51,12 @@ const DirectMessageDetail: React.FC = () => {
         );
       }
       const data = await response.json();
-      console.log("取得したメッセージ:", data.direct_messages);
       const filteredMessages = data.direct_messages.filter(
         (msg: DirectMessage) =>
           msg && msg.content !== undefined && msg.content !== null
       );
       setMessages(filteredMessages);
       scrollToBottom();
-      // 新着メッセージフラグをクリアする
       setNewDirectMessages((prevNewMessages) => {
         const updatedNewMessages = { ...prevNewMessages };
         delete updatedNewMessages[Number(messageId)];
@@ -69,31 +68,36 @@ const DirectMessageDetail: React.FC = () => {
     }
   }, [messageId, setNewDirectMessages]);
 
-  const clearNewMessageFlag = async (senderId: number) => {
-    try {
-      const response = await fetch(
-        `http://localhost:3000/direct_messages/clear_new_messages?sender_id=${senderId}`,
-        {
-          method: "POST",
-          credentials: "include",
-          headers: {
-            "Content-Type": "application/json",
-          },
+  // 既読フラグをクリア
+  const clearNewMessageFlag = useCallback(
+    async (senderId: number) => {
+      try {
+        const response = await fetch(
+          `http://localhost:3000/direct_messages/clear_new_messages?sender_id=${senderId}`,
+          {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              "Content-Type": "application/json",
+            },
+          }
+        );
+        if (!response.ok) {
+          throw new Error("新着メッセージのクリアに失敗しました");
         }
-      );
-      if (!response.ok) {
-        throw new Error("新着メッセージのクリアに失敗しました");
+        setNewDirectMessages((prevNewMessages) => {
+          const updatedNewMessages = { ...prevNewMessages };
+          delete updatedNewMessages[senderId];
+          return updatedNewMessages;
+        });
+      } catch (error) {
+        console.error("新着メッセージのクリアに失敗しました:", error);
       }
-      setNewDirectMessages((prevNewMessages) => {
-        const updatedNewMessages = { ...prevNewMessages };
-        delete updatedNewMessages[senderId];
-        return updatedNewMessages;
-      });
-    } catch (error) {
-      console.error("新着メッセージのクリアに失敗しました:", error);
-    }
-  };
+    },
+    [setNewDirectMessages]
+  );
 
+  // リアルタイムで既読情報を受信してマージ
   useEffect(() => {
     if (isLoading) return;
 
@@ -115,30 +119,49 @@ const DirectMessageDetail: React.FC = () => {
 
     const subscription: Partial<Subscription> = {
       received(data: { direct_message: DirectMessage; action?: string }) {
-        console.log("WebSocket経由でメッセージを受信:", data);
+        console.log("受信データ: ", data);
+
         if (!data.direct_message || !data.direct_message.content) {
           console.error("無効なメッセージを受信しました:", data);
           return;
         }
-        setMessages((prevMessages) => {
-          if (data.action === "delete") {
-            return prevMessages.filter(
-              (msg) => msg.id !== data.direct_message.id
+
+        switch (data.action) {
+          case "create":
+            setMessages((prevMessages) => [
+              ...prevMessages,
+              data.direct_message,
+            ]);
+            break;
+
+          case "update_read_status":
+            // 既読情報をリアルタイムで反映させる
+            setMessages((prevMessages) =>
+              prevMessages.map((msg) =>
+                msg.id === data.direct_message.id
+                  ? {
+                      ...msg,
+                      ...data.direct_message, // 新しい既読情報をマージ
+                      is_read: true, // 既読ステータスを強制的に更新
+                    }
+                  : msg
+              )
             );
-          } else if (data.action === "update") {
-            return prevMessages.map((msg) =>
-              msg.id === data.direct_message.id ? data.direct_message : msg
+            break;
+
+          case "delete":
+            setMessages((prevMessages) =>
+              prevMessages.filter((msg) => msg.id !== data.direct_message.id)
             );
-          } else if (
-            data.action === "create" &&
-            !prevMessages.find((msg) => msg.id === data.direct_message.id)
-          ) {
-            return [...prevMessages, data.direct_message];
-          }
-          return prevMessages;
-        });
+            break;
+
+          default:
+            console.warn("未知のアクション:", data.action);
+        }
+
         scrollToForm();
-        // 新着メッセージフラグをクリアする
+
+        // 新着メッセージフラグをクリア
         clearNewMessageFlag(data.direct_message.sender_id);
       },
       connected() {
@@ -163,7 +186,7 @@ const DirectMessageDetail: React.FC = () => {
     isLoading,
     user,
     messageId,
-    setNewDirectMessages,
+    clearNewMessageFlag,
   ]);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -173,7 +196,6 @@ const DirectMessageDetail: React.FC = () => {
       return;
     }
 
-    // メッセージを編集する場合
     if (editingMessageId !== null) {
       try {
         const response = await fetch(
@@ -198,7 +220,6 @@ const DirectMessageDetail: React.FC = () => {
           );
         }
         const data = await response.json();
-        console.log("メッセージが更新されました:", data);
         setMessages((prevMessages) =>
           prevMessages.map((msg) =>
             msg.id === editingMessageId
@@ -213,7 +234,6 @@ const DirectMessageDetail: React.FC = () => {
         console.error("メッセージの編集に問題が発生しました:", error);
       }
     } else {
-      // 新しいメッセージを送信する場合
       if (messages.length === 0) {
         console.error(
           "メッセージが利用できないため、受信者IDを判断できません。"
@@ -247,7 +267,6 @@ const DirectMessageDetail: React.FC = () => {
           );
         }
         const data = await response.json();
-        console.log("メッセージが送信されました:", data);
         setNewMessage("");
         scrollToBottom();
       } catch (error) {
@@ -295,17 +314,14 @@ const DirectMessageDetail: React.FC = () => {
     }
   };
 
-  // ローディング中の場合の表示
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  // 認証情報が不足している場合の表示
   if (!isAuthenticated || !user || !messageId) {
     return <div>Loading...</div>;
   }
 
-  // メッセージリストとメッセージ入力フォームを表示
   return (
     <div>
       <MessageList
