@@ -185,3 +185,17 @@
   background-color: red;
   color: white;
 }
+
+.friend-button.message {
+  background-color: #007bff; /* 青色 */
+  color: white; /* 文字の色を白に */
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.friend-button.message:hover {
+  background-color: #0056b3; /* ホバー時に少し濃い青 */
+}

@@ -3,10 +3,14 @@ class FriendsController < ApplicationController
   before_action :set_friend, only: [:update, :cancel]
   before_action :set_user_to_block_or_unblock, only: [:block, :unblock]
 
+
   # フレンドリストとブロックリストを返すアクション
   def index
+    # TODO: 承認済みフレンドをフォロー、フォロワーに分ける（現状：相互になると2重表示となる）
+    # TODO: フォロー、フォロワーに変更後ブロックのロジックを変更する
+
     # 承認済みフレンドの取得
-    confirmed_friends = Friend.where("(user_id = ? OR friend_id = ?) AND state = ?", current_user.id, current_user.id, 'accepted')
+    confirmed_friends = Friend.where("(user_id = ? OR friend_id = ?) AND state = ?", current_user.id, current_user.id, 'accepted').distinct
 
     # ペンディング状態のフレンド申請を取得
     pending_requests_sent = Friend.where(user_id: current_user.id, state: 'pending') # 自分が送信したフレンド申請
@@ -43,31 +47,26 @@ class FriendsController < ApplicationController
       end
     end
   end
-
-  # フレンド申請の承認・拒否
+  # フレンド申請の承認・拒否・キャンセル時にリアルタイム通知を送信
   def update
-    # authorize @friend
-
-    # params[:action_type]をログに表示
-    logger.info "Action Type: #{params[:action_type]}"
-
     case params[:action_type]
     when 'accept'
       if @friend.accept!
-        broadcast_friend_update
+        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'accepted')
         render json: { message: 'フレンド申請を承認しました。' }, status: :ok
       else
         render json: { error: 'フレンド申請の承認に失敗しました。' }, status: :unprocessable_entity
       end
     when 'reject'
       if @friend.reject!
-        broadcast_friend_update
+        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'rejected')
         render json: { message: 'フレンド申請を拒否しました。' }, status: :ok
       else
         render json: { error: 'フレンド申請の拒否に失敗しました。' }, status: :unprocessable_entity
       end
     when 'cancel'
       if @friend.destroy
+        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'cancelled')
         render json: { message: 'フレンド申請をキャンセルしました。' }, status: :ok
       else
         render json: { error: 'フレンド申請のキャンセルに失敗しました。' }, status: :unprocessable_entity
@@ -77,30 +76,22 @@ class FriendsController < ApplicationController
     end
   end
 
-
-  # フレンド申請キャンセルアクション
-  def cancel
-    if @friend.pending? && @friend.user_id == current_user.id
-      @friend.destroy
-      render json: { message: 'フレンド申請がキャンセルされました。' }, status: :ok
-    else
-      render json: { error: 'フレンド申請のキャンセルに失敗しました。' }, status: :unprocessable_entity
-    end
-  end
-
   # ブロック処理
   def block
     if current_user.block(@user_to_block_or_unblock)
+      broadcast_block_update(current_user.id, @user_to_block_or_unblock.id, 'blocked')
       render json: { message: 'ユーザーをブロックしました。' }, status: :ok
     else
       render json: { error: 'ユーザーのブロックに失敗しました。' }, status: :unprocessable_entity
     end
   end
 
+  # ブロック解除処理
   def unblock
     user_to_unblock = User.find(params[:id])
 
     if current_user.unblock(user_to_unblock)
+      broadcast_block_update(current_user.id, user_to_unblock.id, 'unblocked')
       render json: { message: 'ユーザーのブロックを解除しました。' }, status: :ok
     else
       render json: { error: 'ブロック解除に失敗しました。' }, status: :unprocessable_entity
@@ -139,8 +130,30 @@ class FriendsController < ApplicationController
     @friend = Friend.find(params[:id])
   end
 
-  def broadcast_friend_update
-    FriendListChannel.broadcast_to(current_user, { message: 'friend_updated' })
+  def broadcast_friend_update(sender_id, receiver_id, status)
+    # 送信者に通知
+    FriendUpdatesChannel.broadcast_to(
+      User.find(sender_id),
+      { message: 'friend_updated', status: status }
+    )
+
+    # 受信者に通知
+    FriendUpdatesChannel.broadcast_to(
+      User.find(receiver_id),
+      { message: 'friend_updated', status: status }
+    )
+  end
+
+  def broadcast_block_update(blocker_id, blocked_id, status)
+    # ブロックまたはブロック解除された際にリアルタイム通知
+    FriendUpdatesChannel.broadcast_to(
+      User.find(blocker_id),
+      { message: 'block_status_changed', status: status }
+    )
+    FriendUpdatesChannel.broadcast_to(
+      User.find(blocked_id),
+      { message: 'block_status_changed', status: status }
+    )
   end
 
   def format_friend(friend)

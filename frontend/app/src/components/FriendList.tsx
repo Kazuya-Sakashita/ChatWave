@@ -1,4 +1,6 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { createConsumer } from "@rails/actioncable"; // ActionCableをインポート
+import { useNavigate } from "react-router-dom"; // ページ遷移用のフックをインポート
 import useFriendApi from "../hooks/useFriendApi";
 import { Friend } from "../types/componentTypes";
 import "../components/FriendList.css"; // デザイン用のCSSファイルを読み込み
@@ -20,6 +22,13 @@ const FriendList: React.FC = () => {
   const [blockedFriends, setBlockedFriends] = useState<Friend[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  const navigate = useNavigate(); // ページ遷移用のフックを定義
+
+  // メッセージ送信ページに遷移する関数
+  const handleSendMessage = (friendId: number) => {
+    navigate(`/direct_messages/${friendId}`); // friendId を使ってメッセージページに遷移
+  };
 
   // フレンド情報を取得してセット
   const fetchFriends = useCallback(async () => {
@@ -51,6 +60,35 @@ const FriendList: React.FC = () => {
     console.log("Fetching friends on component mount...");
     fetchFriends();
   }, [fetchFriends]);
+
+  // ActionCableを使ってサーバーからの通知を受け取る
+  useEffect(() => {
+    const cable = createConsumer("ws://localhost:3000/cable");
+
+    const subscription = cable.subscriptions.create(
+      { channel: "FriendUpdatesChannel" },
+      {
+        received: (data) => {
+          console.log("フレンド情報が更新されました:", data);
+          if (
+            data.message === "friend_updated" ||
+            data.message === "block_status_changed"
+          ) {
+            fetchFriends(); // サーバーから通知を受けたらリストをリアルタイム更新
+          }
+        },
+      }
+    );
+
+    return () => {
+      subscription.unsubscribe(); // クリーンアップ時に購読解除
+    };
+  }, [fetchFriends]);
+
+  // 重複を削除したフレンドリストを作成
+  const uniqueConfirmedFriends = confirmedFriends.filter(
+    (friend, index, self) => index === self.findIndex((f) => f.id === friend.id)
+  );
 
   // フレンド申請キャンセル処理（送信した申請）
   const handleCancelRequest = async (friendId: number) => {
@@ -116,13 +154,20 @@ const FriendList: React.FC = () => {
 
       <h3 className="friend-list-subtitle">承認済みのフレンド</h3>
       <ul className="friend-list">
-        {confirmedFriends.length > 0 ? (
-          confirmedFriends.map((friend) => (
+        {uniqueConfirmedFriends.length > 0 ? (
+          uniqueConfirmedFriends.map((friend) => (
             <li key={`confirmed-${friend.id}`} className="friend-list-item">
               <div className="friend-info">
                 <p className="friend-name">名前: {friend.name}</p>
                 <p className="friend-email">Email: {friend.email}</p>
               </div>
+              {/* TODO ダイレクトメッセージ表示に不具合があるため、修正必要 */}
+              <button
+                className="friend-button message"
+                onClick={() => handleSendMessage(friend.id)}
+              >
+                メッセージを送る
+              </button>
               <div className="friend-actions">
                 <button
                   className="friend-button block"
