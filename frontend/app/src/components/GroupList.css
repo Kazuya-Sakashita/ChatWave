@@ -1,0 +1,154 @@
+.group-list-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.group-list-container h2 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.group-list {
+  list-style: none;
+  padding: 0;
+}
+
+.group-list-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-list-item:hover {
+  background-color: #f0f0f0;
+}
+
+.group-link {
+  text-decoration: none;
+  font-size: 18px;
+  color: #007bff;
+  transition: color 0.3s ease;
+}
+
+.group-link:hover {
+  color: #0056b3;
+}
+
+.group-link:active {
+  color: #003d80;
+}
+
+.group-action {
+  font-size: 14px;
+  color: #555;
+}
+
+.group-list-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.group-list-container h2,
+h3 {
+  text-align: center;
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.group-list {
+  list-style: none;
+  padding: 0;
+}
+
+.group-list-item {
+  padding: 15px;
+  margin-bottom: 10px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 1px 5px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.3s ease;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.group-list-item:hover {
+  background-color: #f0f0f0;
+}
+
+.group-link {
+  text-decoration: none;
+  font-size: 18px;
+  color: #007bff;
+  transition: color 0.3s ease;
+}
+
+.group-link:hover {
+  color: #0056b3;
+}
+
+.group-link:active {
+  color: #003d80;
+}
+
+.group-action {
+  font-size: 14px;
+  color: #555;
+}
+
+.create-group-form {
+  display: flex;
+  justify-content: center;
+  margin-top: 20px;
+}
+
+.group-input {
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  width: 250px;
+  margin-right: 10px;
+}
+
+.group-submit-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  color: #fff;
+  background-color: #28a745;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+.group-submit-button:hover {
+  background-color: #218838;
+}
+
+.group-submit-button:disabled {
+  background-color: #6c757d;
+}
+
+.group-error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}

@@ -3,6 +3,25 @@ class GroupsController < ApplicationController
   before_action :set_group, only: [:show, :create_message, :update_message, :destroy_message, :clear_new_messages]
   before_action :check_membership, only: [:show, :create_message, :update_message, :destroy_message, :clear_new_messages]
 
+  def index
+    groups = current_user.groups # 自分がメンバーとして参加しているグループを取得
+    render json: { groups: groups }, status: :ok
+  end
+
+  def create
+    @group = current_user.owned_groups.new(group_params)
+    if @group.save
+      GroupMember.create(group: @group, user: current_user) # オーナーをグループに追加
+      params[:group][:member_ids].each do |member_id|
+        GroupMember.create(group: @group, user_id: member_id)
+      end
+      render json: @group, status: :created
+    else
+      render json: { errors: @group.errors.full_messages }, status: :unprocessable_entity
+    end
+  end
+
+
   def show
     messages = @group.messages.includes(:sender).map do |message|
       begin
@@ -169,6 +188,10 @@ class GroupsController < ApplicationController
     unless @group
       render json: { error: "Group not found" }, status: :not_found
     end
+  end
+
+  def group_params
+    params.require(:group).permit(:name, member_ids: [])
   end
 
   def check_membership

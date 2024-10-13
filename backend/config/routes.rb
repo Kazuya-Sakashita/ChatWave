@@ -28,7 +28,7 @@ Rails.application.routes.draw do
   end
 
   resources :chats, only: [:index]
-  resources :groups, only: [:show] do
+  resources :groups, only: [:index, :show, :create] do
     member do
       post 'create_message'
       post 'clear_new_messages'
