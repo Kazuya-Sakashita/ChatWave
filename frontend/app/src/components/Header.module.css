@@ -6,27 +6,36 @@
   justify-content: space-between;
   align-items: center;
   color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 少しの影でデザインを強調 */
 }
 
+/* ロゴのスタイル */
 .logo {
   font-size: 24px;
   font-weight: bold;
   text-decoration: none; /* Linkの下線を削除 */
   color: white; /* Linkの文字色を白に設定 */
+  display: flex;
+  align-items: center; /* ロゴ内の要素を中央に揃える */
 }
 
+/* ナビゲーションのスタイル */
 nav ul {
   list-style: none;
   display: flex;
-  gap: 15px;
+  gap: 15px; /* リスト項目の間にスペースを確保 */
   margin: 0;
   padding: 0;
+  align-items: center; /* 垂直方向に中央揃え */
 }
 
+/* ナビゲーションリストの項目スタイル */
 nav ul li {
-  display: inline;
+  display: flex;
+  align-items: center; /* リスト項目の中身を中央に揃える */
 }
 
+/* リンクとボタンのスタイル */
 nav ul li a,
 nav ul li button {
   color: white;
@@ -36,10 +45,37 @@ nav ul li button {
   background: none;
   cursor: pointer;
   font-size: 16px;
+  transition: background-color 0.3s ease, color 0.3s ease; /* ホバー効果にスムーズなトランジション */
 }
 
+/* リンクとボタンのホバー時のスタイル */
 nav ul li button:hover,
 nav ul li a:hover {
   background-color: #0056b3;
   border-radius: 4px;
+}
+
+/* ボタンがフォーカスされたときのスタイル */
+nav ul li button:focus,
+nav ul li a:focus {
+  outline: none; /* デフォルトのアウトラインを削除 */
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.5); /* フォーカス時に視覚的な効果を追加 */
+}
+
+/* モバイル対応 */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 20px; /* モバイル時にパディングを増やしてスペースを確保 */
+  }
+
+  nav ul {
+    flex-direction: column;
+    gap: 10px; /* モバイルではリスト項目を縦に並べる */
+  }
+
+  .logo {
+    margin-bottom: 15px; /* モバイル時にロゴとナビゲーションの間にスペースを追加 */
+  }
 }

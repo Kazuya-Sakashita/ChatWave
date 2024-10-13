@@ -1,0 +1,201 @@
+.friend-list-container {
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.friend-list-title {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+  text-align: center;
+}
+
+.friend-list-subtitle {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #555;
+}
+
+.friend-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.friend-list-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #fff;
+  padding: 15px;
+  margin-bottom: 10px;
+  border-radius: 8px;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.friend-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.friend-name,
+.friend-email {
+  margin: 0;
+  font-size: 16px;
+  color: #555;
+}
+
+.friend-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.friend-button {
+  padding: 8px 16px;
+  font-size: 14px;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.friend-button.accept {
+  background-color: #28a745;
+}
+
+.friend-button.accept:hover {
+  background-color: #218838;
+}
+
+.friend-button.reject {
+  background-color: #dc3545;
+}
+
+.friend-button.reject:hover {
+  background-color: #c82333;
+}
+
+.friend-list-loading,
+.friend-list-error {
+  text-align: center;
+  font-size: 18px;
+  color: #ff3333;
+}
+
+.no-friends-message {
+  text-align: center;
+  font-size: 18px;
+  color: #999;
+}
+
+/* ブロックボタンの追加スタイル */
+.friend-button.block {
+  background-color: #ff5722; /* ブロックボタンの背景色 */
+  color: #fff; /* ボタンテキストの色 */
+}
+
+.friend-button.block:hover {
+  background-color: #e64a19; /* ホバー時のブロックボタン背景色 */
+}
+
+/* ブロック解除ボタンのスタイル */
+.friend-button.unblock {
+  background-color: #ff6666; /* ブロック解除ボタンは赤色で視認性を高める */
+  color: white;
+  border: none;
+  padding: 10px 15px;
+  font-size: 14px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.friend-button.unblock:hover {
+  background-color: #cc0000; /* ホバー時に少し濃い赤に変更 */
+}
+
+.friend-button.unblock:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(255, 102, 102, 0.5); /* フォーカス時の視覚的フィードバック */
+}
+
+/* ブロックされたフレンドを薄く表示するクラス */
+.blocked-friend {
+  opacity: 0.5; /* 表示を薄く */
+}
+
+/* キャンセルボタンのデフォルトのスタイル */
+.friend-button.cancel {
+  background-color: #ff6f61; /* 明るい赤色 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* キャンセルボタンのホバー時のスタイル */
+.friend-button.cancel:hover {
+  background-color: #e85c50; /* 少し濃い赤色 */
+}
+
+/* キャンセルボタンのアクティブ時のスタイル */
+.friend-button.cancel:active {
+  background-color: #d9534f; /* さらに濃い赤色 */
+}
+
+.friend-list-item.blocked-friend {
+  opacity: 0.5; /* 灰色っぽくするために透明度を調整 */
+}
+
+.friend-button.blocked {
+  background-color: #c0c0c0; /* 灰色 */
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: not-allowed; /* 無効であることを示す */
+}
+
+.friend-button.block {
+  background-color: red;
+  color: white;
+}
+
+.friend-button.unblock {
+  background-color: gray;
+  color: white;
+}
+
+.blocked-friend {
+  opacity: 0.5;
+}
+
+.friend-button.blocked {
+  background-color: gray;
+  color: white;
+}
+
+.friend-button.active-block {
+  background-color: red;
+  color: white;
+}
+
+.friend-button.message {
+  background-color: #007bff; /* 青色 */
+  color: white; /* 文字の色を白に */
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.friend-button.message:hover {
+  background-color: #0056b3; /* ホバー時に少し濃い青 */
+}

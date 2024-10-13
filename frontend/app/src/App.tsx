@@ -16,6 +16,8 @@ import { MessageProvider } from "./context/MessageContext";
 import ProfilePage from "./components/ProfilePage";
 import ProfileEditPage from "./components/ProfileEditPage";
 import { fetchNotificationSetting } from "./store/notificationSlice";
+import FriendList from "./components/FriendList"; // フレンド一覧ページ
+import SendFriendRequest from "./components/SendFriendRequest";
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -86,6 +88,8 @@ const App: React.FC = () => {
           />
           <Route path="/profile" element={<ProfilePage />} />
           <Route path="/profile/edit" element={<ProfileEditPage />} />
+          <Route path="/friends" element={<FriendList />} />
+          <Route path="/send-friend-request" element={<SendFriendRequest />} />
         </Routes>
       </Router>
     </MessageProvider>

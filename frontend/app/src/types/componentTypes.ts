@@ -173,3 +173,54 @@ export interface MessageProviderProps {
 export interface NotificationSetting {
   enabled: boolean;
 }
+
+export interface FriendRequest {
+  id: number;
+  sender_id: number;
+  sender_name: string;
+  recipient_id: number;
+  recipient_name?: string;
+  created_at: string;
+}
+
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+  avatar_url?: string;
+}
+
+export interface Friend {
+  id: number;
+  name: string;
+  email: string;
+  confirmed: boolean;
+  // is_senderを追加
+  is_sender?: boolean;
+  avatar_url?: string;
+}
+export interface FriendsResponse {
+  confirmed_friends: Friend[];
+  pending_requests_sent: Friend[]; // 送信したフレンド申請
+  pending_requests_received: Friend[]; // 受け取ったフレンド申請
+  blocked_friends: Friend[];
+  pending_requests: Friend[];
+}
+
+export interface User {
+  id: number;
+  name: string;
+  avatar_url?: string; // アバター画像用のURL
+}
+
+export interface FriendRequest {
+  id: number;
+  sender_id: number;
+  recipient_id: number;
+  state: "pending" | "accepted" | "rejected";
+  created_at: string;
+}
+
+export interface PendingFriendRequest {
+  recipient_id: number;
+}
