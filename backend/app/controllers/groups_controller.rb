@@ -39,6 +39,9 @@ class GroupsController < ApplicationController
       set_new_message_flag_for_group(message.sender_id)
       @group.members.each do |member|
         next if member.id == message.sender_id
+
+        # 各メンバーへの通知を送信する直前にログを追加
+        Rails.logger.info "Sending new message notification to member #{member.id} in group #{@group.id} from sender #{message.sender_id}"
         ActionCable.server.broadcast("new_message_notifications_#{member.id}", { group_id: @group.id, sender_id: message.sender_id })
       end
       render json: { message: formatted_message }, status: :created

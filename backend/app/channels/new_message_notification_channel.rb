@@ -1,6 +1,6 @@
 class NewMessageNotificationChannel < ApplicationCable::Channel
   def subscribed
-    stream_from "new_message_notifications_#{current_user.id}"
+    stream_from "new_message_notifications_#{params[:user_id]}"
   end
 
   def unsubscribed
