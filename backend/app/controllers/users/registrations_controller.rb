@@ -12,12 +12,7 @@ class Users::RegistrationsController < Devise::RegistrationsController
 
   # POST /resource
   def create
-    build_resource(sign_up_params)
-
-    # `sign_up_params`内に`profile_attributes`が含まれていない場合の処理を確認
-    if profile_params[:profile_attributes]
-      resource.build_profile(profile_params[:profile_attributes])
-    end
+    build_resource(sign_up_params) # `sign_up_params`にprofile_attributesを含める
 
     resource.save
     yield resource if block_given?
@@ -34,36 +29,36 @@ class Users::RegistrationsController < Devise::RegistrationsController
   protected
 
   def configure_permitted_parameters
-    devise_parameter_sanitizer.permit(:sign_up, keys: %i[
-      name
-      email
-      password
-      password_confirmation
-      profile_attributes => %i[
-        full_name
-        birth_date
-        gender
-        phone_number
-        postal_code
-        address
-        avatar
+    devise_parameter_sanitizer.permit(:sign_up, keys: [
+      :name,
+      :email,
+      :password,
+      :password_confirmation,
+      profile_attributes: [
+        :full_name,
+        :birth_date,
+        :gender,
+        :phone_number,
+        :postal_code,
+        :address,
+        :avatar
       ]
     ])
 
-    devise_parameter_sanitizer.permit(:account_update, keys: %i[
-      name
-      email
-      password
-      password_confirmation
-      current_password
-      profile_attributes => %i[
-        full_name
-        birth_date
-        gender
-        phone_number
-        postal_code
-        address
-        avatar
+    devise_parameter_sanitizer.permit(:account_update, keys: [
+      :name,
+      :email,
+      :password,
+      :password_confirmation,
+      :current_password,
+      profile_attributes: [
+        :full_name,
+        :birth_date,
+        :gender,
+        :phone_number,
+        :postal_code,
+        :address,
+        :avatar
       ]
     ])
   end
@@ -78,20 +73,28 @@ class Users::RegistrationsController < Devise::RegistrationsController
       }
     else
       render json: {
-        status: { message: "User couldn't be created successfully. #{resource.errors.full_messages.to_sentence}" }
+        status: { message: "User couldn't be created successfully. #{resource.errors.full_messages.to_sentence}" },
+        errors: resource.errors.full_messages # 追加: エラー内容を表示
       }, status: :unprocessable_entity
     end
   end
 
-  def profile_params
-    params.require(:user).permit(profile_attributes: %i[
-      full_name
-      birth_date
-      gender
-      phone_number
-      postal_code
-      address
-      avatar
-    ])
+
+  def sign_up_params
+    params.require(:user).permit(
+      :name,
+      :email,
+      :password,
+      :password_confirmation,
+      profile_attributes: [
+        :full_name,
+        :birth_date,
+        :gender,
+        :phone_number,
+        :postal_code,
+        :address,
+        :avatar
+      ]
+    )
   end
 end

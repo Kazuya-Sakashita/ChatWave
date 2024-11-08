@@ -118,28 +118,36 @@ const ChatList: React.FC = () => {
 
   // 初回ロード時にチャットリストと新着メッセージを取得し、WebSocketを設定する
   useEffect(() => {
+    if (!user) {
+      console.log("ユーザーがロードされていません");
+      return;
+    } else {
+      console.log("ユーザー情報:", user);
+    }
+
     fetchChats();
 
-    // WebSocket接続の設定
+    console.log("WebSocket接続を開始します");
     const cable = createConsumer("ws://localhost:3000/cable");
 
     const channelParams: ChannelNameWithParams = {
       channel: "NewMessageNotificationChannel",
+      user_id: user.id,
     };
 
     const subscription: Partial<Subscription> = {
       received(data: { group_id?: number; sender_id: number }) {
-        // 通知設定が有効な場合のみ、新着表示を更新
+        console.log("新着メッセージ通知を受信:", data);
         if (notificationEnabled) {
           if (data.group_id !== undefined) {
             setNewMessages((prevNewMessages) => ({
               ...prevNewMessages,
-              [data.group_id!]: true,
+              [data.group_id!.toString()]: true,
             }));
-          } else {
+          } else if (data.sender_id !== undefined) {
             setNewDirectMessages((prevNewMessages) => ({
               ...prevNewMessages,
-              [data.sender_id]: true,
+              [data.sender_id.toString()]: true,
             }));
           }
         }
@@ -159,13 +167,14 @@ const ChatList: React.FC = () => {
 
     return () => {
       channel.unsubscribe();
+      console.log("WebSocket接続が解除されました");
     };
   }, [
     fetchChats,
     user,
+    notificationEnabled,
     setNewMessages,
     setNewDirectMessages,
-    notificationEnabled,
   ]);
 
   // 通知設定のトグル変更時に再フェッチ
@@ -203,6 +212,7 @@ const ChatList: React.FC = () => {
         }
         setNewMessages((prevNewMessages) => {
           const updatedNewMessages = { ...prevNewMessages };
+          console.log("更新された新着メッセージ:", updatedNewMessages);
           delete updatedNewMessages[groupId];
           return updatedNewMessages;
         });
