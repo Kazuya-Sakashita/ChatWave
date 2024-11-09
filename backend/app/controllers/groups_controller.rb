@@ -8,18 +8,46 @@ class GroupsController < ApplicationController
     render json: { groups: groups }, status: :ok
   end
 
+  # 選択可能なメンバーを取得
+  def selectable_members
+    members = current_user.selectable_members
+    render json: { members: members }, status: :ok
+  end
+
   def create
+    Rails.logger.info "受け取ったパラメータ: #{params.inspect}"
+
     @group = current_user.owned_groups.new(group_params)
-    if @group.save
-      GroupMember.create(group: @group, user: current_user) # オーナーをグループに追加
-      params[:group][:member_ids].each do |member_id|
-        GroupMember.create(group: @group, user_id: member_id)
+
+    ActiveRecord::Base.transaction do
+      if @group.save
+        # オーナーをグループに追加
+        GroupMember.create!(group: @group, user: current_user)
+
+        # group_params から member_ids を取得
+        member_ids = group_params[:member_ids] || []
+        Rails.logger.info "取得した member_ids: #{member_ids.inspect}"
+
+        # メンバーを追加
+        member_ids.each do |member_id|
+          user = User.find_by(id: member_id)
+          Rails.logger.info "Processing member_id: #{member_id}, User: #{user.inspect}"
+          next if user.nil? || GroupMember.exists?(group: @group, user: user)
+
+          group_member = GroupMember.create!(group: @group, user: user)
+          Rails.logger.info "Created GroupMember: #{group_member.inspect}"
+        end
+
+        render json: @group, status: :created
+      else
+        render json: { errors: @group.errors.full_messages }, status: :unprocessable_entity
       end
-      render json: @group, status: :created
-    else
-      render json: { errors: @group.errors.full_messages }, status: :unprocessable_entity
+    rescue ActiveRecord::RecordInvalid => e
+      render json: { errors: e.message }, status: :unprocessable_entity
     end
   end
+
+
 
 
   def show
@@ -194,8 +222,12 @@ class GroupsController < ApplicationController
   end
 
   def group_params
-    params.require(:group).permit(:name, member_ids: [])
+    permitted = params.require(:group).permit(:name)
+    permitted[:member_ids] = params[:member_ids] if params[:member_ids].present?
+    Rails.logger.info "修正後のフィルタリング後のパラメータ: #{permitted.inspect}"
+    permitted
   end
+
 
   def check_membership
     unless GroupMember.exists?(group_id: @group.id, user_id: current_user.id)
