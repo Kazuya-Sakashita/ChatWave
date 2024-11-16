@@ -133,10 +133,9 @@ const GroupList: React.FC = () => {
         <h4>メンバーを選択</h4>
         <MemberSelection
           users={selectableMembers}
-          onSelectionChange={(selectedUsers) =>
-            setSelectedMembers(selectedUsers)
-          }
-          resetSelection={false} // 追加
+          selectedMembers={selectedMembers}
+          onSelectionChange={setSelectedMembers}
+          resetSelection={true}
         />
 
         <button
