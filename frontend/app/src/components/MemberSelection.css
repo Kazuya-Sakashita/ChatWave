@@ -1,24 +1,19 @@
 .member-selection-container {
   width: 100%;
-  max-width: 600px;
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 20px;
 }
 
-.search-input {
-  width: 100%;
-  padding: 10px;
-  margin-bottom: 15px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-}
-
+/* 横並びのユーザーリスト */
 .user-list-horizontal {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 15px;
   justify-content: center;
 }
 
+/* ユーザーカードのスタイル */
 .user-card {
   display: flex;
   flex-direction: column;
@@ -43,6 +38,7 @@
   border: 2px solid #0056b3;
 }
 
+/* アバター画像のスタイル */
 .user-avatar {
   width: 60px;
   height: 60px;
@@ -51,22 +47,9 @@
   margin-bottom: 10px;
 }
 
+/* ユーザー名のスタイル */
 .user-name {
   font-size: 1rem;
   font-weight: bold;
   text-align: center;
-}
-
-.selected-users {
-  margin-top: 20px;
-}
-
-.selected-user-tag {
-  display: inline-block;
-  background-color: #007bff;
-  color: #fff;
-  padding: 5px 10px;
-  border-radius: 20px;
-  margin-right: 5px;
-  font-size: 0.9rem;
 }

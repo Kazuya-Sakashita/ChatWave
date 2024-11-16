@@ -42,17 +42,28 @@ const MemberSelection: React.FC<MemberSelectionProps> = ({
 
   return (
     <div className="member-selection-container">
-      {users.map((user) => (
-        <div
-          key={user.id}
-          className={`user-card ${
-            selectedUsers.some((u) => u.id === user.id) ? "selected" : ""
-          }`}
-          onClick={() => handleSelectUser(user)}
-        >
-          <p>{user.name}</p>
-        </div>
-      ))}
+      <div className="user-list-horizontal">
+        {users.map((user) => (
+          <div
+            key={user.id}
+            className={`user-card ${
+              selectedUsers.some((u) => u.id === user.id) ? "selected" : ""
+            }`}
+            onClick={() => handleSelectUser(user)}
+          >
+            <img
+              src={
+                user.avatar_url?.startsWith("/uploads")
+                  ? `${process.env.REACT_APP_API_BASE_URL}${user.avatar_url}`
+                  : `${process.env.REACT_APP_API_BASE_URL}/uploads/profile/avatar/1/default_avatar.jpeg`
+              }
+              alt={user.name}
+              className="user-avatar"
+            />
+            <p className="user-name">{user.name}</p>
+          </div>
+        ))}
+      </div>
     </div>
   );
 };
