@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Friend, Group } from "../types/componentTypes";
-import "./CreateGroup.css"; // 必要ならCSSファイルを作成
+import "./CreateGroup.css";
 
 const CreateGroup: React.FC = () => {
   const [groupName, setGroupName] = useState<string>("");
@@ -9,23 +9,27 @@ const CreateGroup: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  // API ベース URL を環境変数から取得
+  const apiBaseUrl =
+    process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+
   useEffect(() => {
     // フレンド一覧の取得
     const fetchFriends = async () => {
       try {
-        const response = await fetch("http://localhost:3000/friends", {
+        const response = await fetch(`${apiBaseUrl}/friends`, {
           method: "GET",
           credentials: "include",
         });
         const data = await response.json();
-        setFriends(data.confirmed_friends); // フレンド一覧をセット
+        setFriends(data.confirmed_friends || []);
       } catch (error) {
         console.error("フレンド一覧の取得に失敗しました:", error);
       }
     };
 
     fetchFriends();
-  }, []);
+  }, [apiBaseUrl]);
 
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,7 +42,7 @@ const CreateGroup: React.FC = () => {
     setError(null);
 
     try {
-      const response = await fetch("http://localhost:3000/groups", {
+      const response = await fetch(`${apiBaseUrl}/groups`, {
         method: "POST",
         credentials: "include",
         headers: {
@@ -57,10 +61,9 @@ const CreateGroup: React.FC = () => {
         return;
       }
 
-      const data: Group = await response.json();
-      console.log("グループ作成成功:", data);
+      alert("グループが正常に作成されました！");
       setGroupName("");
-      setSelectedMembers([]); // フォームをクリア
+      setSelectedMembers([]);
     } catch (error) {
       console.error("グループ作成に失敗しました:", error);
       setError("グループ作成に失敗しました。");
@@ -91,21 +94,28 @@ const CreateGroup: React.FC = () => {
         />
         <div className="members-selection">
           <h3>メンバーを選択</h3>
-          <ul className="friends-list">
+          <div className="friends-list">
             {friends.map((friend) => (
-              <li key={friend.id}>
-                <label>
-                  <input
-                    type="checkbox"
-                    value={friend.id}
-                    onChange={() => handleMemberSelect(friend.id)}
-                    checked={selectedMembers.includes(friend.id)}
-                  />
-                  {friend.name}
-                </label>
-              </li>
+              <div
+                key={friend.id}
+                className={`friend-card ${
+                  selectedMembers.includes(friend.id) ? "selected" : ""
+                }`}
+                onClick={() => handleMemberSelect(friend.id)}
+              >
+                <img
+                  src={
+                    friend.avatar_url?.startsWith("/uploads")
+                      ? `${apiBaseUrl}${friend.avatar_url}`
+                      : `${apiBaseUrl}/uploads/profile/avatar/1/default_avatar.jpeg`
+                  }
+                  alt={friend.name}
+                  className="friend-avatar"
+                />
+                <p className="friend-name">{friend.name}</p>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
         <button
           type="submit"

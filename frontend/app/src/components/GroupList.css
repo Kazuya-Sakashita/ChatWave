@@ -90,24 +90,30 @@ h3 {
   width: 300px;
 }
 
-/* ボタンスタイル */
+/* グループ作成ボタンのスタイル */
 .group-submit-button {
-  padding: 10px 20px;
-  font-size: 16px;
+  width: 100%;
+  padding: 15px;
+  background-color: #007bff;
   color: #fff;
-  background-color: #28a745;
+  font-size: 1.1rem;
+  font-weight: bold;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.4);
 }
 
 .group-submit-button:hover {
-  background-color: #218838;
+  background-color: #0056b3;
+  box-shadow: 0 6px 10px rgba(0, 86, 179, 0.5);
 }
 
 .group-submit-button:disabled {
-  background-color: #6c757d;
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
 }
 
 /* エラーメッセージ */

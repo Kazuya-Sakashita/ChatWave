@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { Group, User } from "../types/componentTypes";
+import MemberSelection from "../components/MemberSelection";
 import "./GroupList.css";
 
-// レスポンス型の定義
 interface SelectableMembersResponse {
   members: User[];
 }
@@ -10,7 +10,7 @@ interface SelectableMembersResponse {
 const GroupList: React.FC = () => {
   const [groups, setGroups] = useState<Group[] | undefined>(undefined);
   const [selectableMembers, setSelectableMembers] = useState<User[]>([]);
-  const [selectedMembers, setSelectedMembers] = useState<number[]>([]);
+  const [selectedMembers, setSelectedMembers] = useState<User[]>([]);
   const [newGroupName, setNewGroupName] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,15 +46,7 @@ const GroupList: React.FC = () => {
         if (!response.ok) throw new Error("メンバー一覧の取得に失敗しました");
 
         const data: SelectableMembersResponse = await response.json();
-        console.log("取得したデータ:", data);
-
-        // データ構造に応じて設定
-        if (Array.isArray(data.members)) {
-          setSelectableMembers(data.members);
-        } else {
-          console.warn("予期しないデータ構造:", data);
-          setSelectableMembers([]);
-        }
+        setSelectableMembers(data.members || []);
       } catch (error) {
         console.error(error);
         setError("メンバー一覧の取得に失敗しました");
@@ -77,7 +69,7 @@ const GroupList: React.FC = () => {
     setError(null);
 
     try {
-      const memberIds = selectedMembers.length > 0 ? selectedMembers : [];
+      const memberIds = selectedMembers.map((user) => user.id);
       const response = await fetch("http://localhost:3000/groups", {
         method: "POST",
         credentials: "include",
@@ -91,7 +83,6 @@ const GroupList: React.FC = () => {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
         setError(
           "グループ作成に失敗しました。エラーメッセージを確認してください。"
         );
@@ -102,22 +93,14 @@ const GroupList: React.FC = () => {
       const data = await response.json();
       setGroups((prevGroups) => [...(prevGroups || []), data]);
       setNewGroupName("");
-      setSelectedMembers([]);
+      setSelectedMembers([]); // 選択されたメンバーをリセット
+      alert("グループリストが正常に作成されました！");
     } catch (error) {
       console.error("グループ作成に失敗しました:", error);
       setError("グループ作成に失敗しました。サーバーに接続できませんでした。");
     } finally {
       setLoading(false);
     }
-  };
-
-  // メンバー選択のハンドラ
-  const handleMemberSelection = (userId: number) => {
-    setSelectedMembers((prevSelected) =>
-      prevSelected.includes(userId)
-        ? prevSelected.filter((id) => id !== userId)
-        : [...prevSelected, userId]
-    );
   };
 
   return (
@@ -148,24 +131,13 @@ const GroupList: React.FC = () => {
         />
 
         <h4>メンバーを選択</h4>
-        <ul className="user-list">
-          {selectableMembers.length > 0 ? (
-            selectableMembers.map((user) => (
-              <li key={user.id} className="user-list-item">
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={selectedMembers.includes(user.id)}
-                    onChange={() => handleMemberSelection(user.id)}
-                  />
-                  {user.name}
-                </label>
-              </li>
-            ))
-          ) : (
-            <p>選択可能なメンバーが見つかりません。</p>
-          )}
-        </ul>
+        <MemberSelection
+          users={selectableMembers}
+          onSelectionChange={(selectedUsers) =>
+            setSelectedMembers(selectedUsers)
+          }
+          resetSelection={false} // 追加
+        />
 
         <button
           type="submit"
