@@ -27,8 +27,44 @@ const MemberSelection: React.FC<MemberSelectionProps> = ({
 
   // 親コンポーネントからの `selectedMembers` の変更を反映
   useEffect(() => {
+    console.log("selectedMembers:", selectedMembers);
     setSelectedUsers(selectedMembers);
   }, [selectedMembers]);
+
+  // `users` データのログ出力
+  useEffect(() => {
+    console.log("Fetched users data:", users);
+    users.forEach((user) => {
+      console.log("User ID:", user.id);
+      console.log("User Name:", user.name);
+      console.log("User Avatar URL:", user.avatar_url);
+    });
+  }, [users]);
+
+  // アバター画像の URL を取得する関数
+  const getAvatarUrl = (avatarUrl?: string) => {
+    const baseUrl =
+      process.env.REACT_APP_API_BASE_URL || "http://localhost:3000";
+    console.log("Received avatarUrl:", avatarUrl);
+
+    // avatarUrl が存在し、空文字列でもなく、デフォルト画像でもない場合
+    if (
+      avatarUrl &&
+      avatarUrl !== "" &&
+      avatarUrl !== "/uploads/profile/avatar/1/default_avatar.jpeg"
+    ) {
+      if (avatarUrl.startsWith("http")) {
+        console.log("Using external URL:", avatarUrl);
+        return avatarUrl;
+      }
+      console.log("Using local URL:", `${baseUrl}${avatarUrl}`);
+      return `${baseUrl}${avatarUrl}`;
+    }
+
+    // デフォルトの画像を返す
+    console.log("Using default avatar URL.");
+    return `${baseUrl}/uploads/profile/avatar/1/default_avatar.jpeg`;
+  };
 
   const handleSelectUser = (user: User) => {
     const isSelected = selectedUsers.some((u) => u.id === user.id);
@@ -52,11 +88,7 @@ const MemberSelection: React.FC<MemberSelectionProps> = ({
             onClick={() => handleSelectUser(user)}
           >
             <img
-              src={
-                user.avatar_url?.startsWith("/uploads")
-                  ? `${process.env.REACT_APP_API_BASE_URL}${user.avatar_url}`
-                  : `${process.env.REACT_APP_API_BASE_URL}/uploads/profile/avatar/1/default_avatar.jpeg`
-              }
+              src={getAvatarUrl(user.avatar_url)}
               alt={user.name}
               className="user-avatar"
             />

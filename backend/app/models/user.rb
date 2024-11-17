@@ -49,7 +49,7 @@ class User < ApplicationRecord
 
   # アバター URL を取得
   def avatar_url
-    profile&.avatar.present? ? profile.avatar.url : nil
+    profile&.avatar&.url
   end
 
   # 通知設定をデフォルトで作成
@@ -76,6 +76,7 @@ class User < ApplicationRecord
   def selectable_members
     User.where.not(id: id) # 自分以外のユーザー
         .where.not(id: blocking.pluck(:id)) # ブロックしているユーザーを除外
+        .map { |user| user.as_json(only: [:id, :name, :email]).merge(avatar_url: user.avatar_url) }
   end
 
   # グループに招待可能なフレンドリストを取得

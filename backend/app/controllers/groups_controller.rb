@@ -14,6 +14,7 @@ class GroupsController < ApplicationController
     render json: { members: members }, status: :ok
   end
 
+
   def create
     Rails.logger.info "受け取ったパラメータ: #{params.inspect}"
 
