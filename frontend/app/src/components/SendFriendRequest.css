@@ -76,8 +76,9 @@
 }
 
 .user-card.selected {
-  border: 2px solid #3498db;
-  background-color: #eaf2f8;
+  border: 2px solid #007bff;
+  background-color: #e0f7ff;
+  transform: scale(1.05);
 }
 
 /* アバター画像のスタイル */

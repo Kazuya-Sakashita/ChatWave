@@ -1,33 +1,31 @@
 import React, { useEffect, useState } from "react";
 import useFriendApi from "../hooks/useFriendApi";
 import { useNavigate } from "react-router-dom";
-import { User, PendingFriendRequest } from "../types/componentTypes"; // 型をインポート
-import "../components/SendFriendRequest.css"; // デザイン用CSSを読み込み
+import { User, PendingFriendRequest } from "../types/componentTypes";
+import "../components/SendFriendRequest.css";
 
 const SendFriendRequest: React.FC = () => {
   const [users, setUsers] = useState<User[]>([]);
   const [selectedUser, setSelectedUser] = useState<number | null>(null);
-  const [pendingRequests, setPendingRequests] = useState<number[]>([]); // 承認待ちのユーザーリスト
+  const [pendingRequests, setPendingRequests] = useState<number[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const { sendFriendRequest, getPendingFriendRequests } = useFriendApi(); // フレンド申請APIフックを使用
+  const { sendFriendRequest, getPendingFriendRequests } = useFriendApi();
   const navigate = useNavigate();
 
   // 承認待ちユーザーの取得とユーザー一覧の取得
   useEffect(() => {
     const fetchUsersAndPendingRequests = async () => {
       try {
-        // 承認待ちフレンドリクエストの取得
         const pendingRequestsResponse: PendingFriendRequest[] =
           await getPendingFriendRequests();
         const pendingIds = pendingRequestsResponse.map(
           (request: PendingFriendRequest) => request.recipient_id
         );
-        setPendingRequests(pendingIds); // 承認待ちリストをセット
+        setPendingRequests(pendingIds);
 
-        // 全ユーザーの取得
         const response = await fetch("http://localhost:3000/users", {
-          credentials: "include", // 認証情報を含める
+          credentials: "include",
         });
         if (response.ok) {
           const data: User[] = await response.json();
@@ -45,6 +43,17 @@ const SendFriendRequest: React.FC = () => {
     fetchUsersAndPendingRequests();
   }, [getPendingFriendRequests]);
 
+  // ユーザーの選択または選択解除を行う関数
+  const toggleSelectUser = (userId: number) => {
+    if (selectedUser === userId) {
+      // すでに選択されている場合、選択を解除
+      setSelectedUser(null);
+    } else {
+      // 選択
+      setSelectedUser(userId);
+    }
+  };
+
   // フレンド申請を送信する処理
   const handleSendRequest = async () => {
     if (selectedUser === null) {
@@ -55,15 +64,12 @@ const SendFriendRequest: React.FC = () => {
       await sendFriendRequest(selectedUser);
       alert("フレンド申請を送信しました。");
 
-      // 申請したユーザーを承認待ちリストに追加
       setPendingRequests((prev) => [...prev, selectedUser]);
-
-      // フレンド申請後、リストから削除
       setUsers((prevUsers) =>
         prevUsers.filter((user) => user.id !== selectedUser)
       );
-      setSelectedUser(null); // 選択状態をクリア
-      navigate("/friends"); // フレンド一覧にリダイレクト
+      setSelectedUser(null);
+      navigate("/friends");
     } catch (error) {
       setError("フレンド申請の送信に失敗しました。");
     }
@@ -90,7 +96,7 @@ const SendFriendRequest: React.FC = () => {
                 className={`user-card ${
                   selectedUser === user.id ? "selected" : ""
                 }`}
-                onClick={() => setSelectedUser(user.id)}
+                onClick={() => toggleSelectUser(user.id)}
               >
                 <img
                   src={user.avatar_url || "/default-avatar.png"}
