@@ -74,9 +74,12 @@ class User < ApplicationRecord
 
   # グループメンバー選択用のメンバーリストを取得
   def selectable_members
-    User.where.not(id: id) # 自分以外のユーザー
-        .where.not(id: blocking.pluck(:id)) # ブロックしているユーザーを除外
-        .map { |user| user.as_json(only: [:id, :name, :email]).merge(avatar_url: user.avatar_url) }
+    blocked_ids = blocking.pluck(:id)
+
+    User
+      .where.not(id: [id, *blocked_ids])
+      .select(:id, :name, :email)
+      .map { |user| user.attributes.merge(avatar_url: user.avatar_url) }
   end
 
   # グループに招待可能なフレンドリストを取得
