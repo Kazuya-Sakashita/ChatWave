@@ -114,3 +114,27 @@
   color: #888;
   margin-left: 10px;
 }
+
+.create-group-button {
+  padding: 10px 20px;
+  background-color: #007bff; /* ブルー系の色 */
+  color: white;
+  text-decoration: none;
+  border-radius: 4px;
+  font-weight: bold;
+  transition: background-color 0.3s, box-shadow 0.3s ease;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 123, 255, 0.3);
+  cursor: pointer;
+}
+
+.create-group-button:hover {
+  background-color: #0056b3; /* ホバー時に少し濃いブルーに変更 */
+  box-shadow: 0 4px 8px rgba(0, 86, 179, 0.4);
+}
+
+.create-group-button:active {
+  background-color: #004080; /* クリック時にさらに濃いブルーに */
+  box-shadow: 0 2px 4px rgba(0, 64, 128, 0.5);
+  transform: translateY(1px); /* クリック時の軽い押し込み効果 */
+}

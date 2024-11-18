@@ -19,7 +19,6 @@ import { fetchNotificationSetting } from "./store/notificationSlice";
 import FriendList from "./components/FriendList"; // フレンド一覧ページ
 import SendFriendRequest from "./components/SendFriendRequest";
 import GroupList from "./components/GroupList"; // グループ一覧コンポーネント
-import CreateGroup from "./components/CreateGroup"; // グループ作成コンポーネント
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -75,16 +74,6 @@ const App: React.FC = () => {
             }
           />
           <Route
-            path="/groups/new"
-            element={
-              <RequireAuth>
-                <>
-                  <CreateGroup /> {/* グループ作成ページ */}
-                </>
-              </RequireAuth>
-            }
-          />
-          <Route
             path="/groups/:groupId"
             element={
               <RequireAuth>
@@ -114,6 +103,7 @@ const App: React.FC = () => {
           <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/friends" element={<FriendList />} />
           <Route path="/send-friend-request" element={<SendFriendRequest />} />
+          <Route path="/groups" element={<GroupList />} />
         </Routes>
       </Router>
     </MessageProvider>
