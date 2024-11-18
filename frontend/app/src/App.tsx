@@ -18,6 +18,7 @@ import ProfileEditPage from "./components/ProfileEditPage";
 import { fetchNotificationSetting } from "./store/notificationSlice";
 import FriendList from "./components/FriendList"; // フレンド一覧ページ
 import SendFriendRequest from "./components/SendFriendRequest";
+import GroupList from "./components/GroupList"; // グループ一覧コンポーネント
 
 const App: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -63,10 +64,22 @@ const App: React.FC = () => {
             }
           />
           <Route
+            path="/groups"
+            element={
+              <RequireAuth>
+                <>
+                  <GroupList /> {/* グループ一覧ページ */}
+                </>
+              </RequireAuth>
+            }
+          />
+          <Route
             path="/groups/:groupId"
             element={
               <RequireAuth>
-                <GroupChatDetail />
+                <>
+                  <GroupChatDetail /> {/* グループチャット詳細ページ */}
+                </>
               </RequireAuth>
             }
           />
@@ -90,6 +103,7 @@ const App: React.FC = () => {
           <Route path="/profile/edit" element={<ProfileEditPage />} />
           <Route path="/friends" element={<FriendList />} />
           <Route path="/send-friend-request" element={<SendFriendRequest />} />
+          <Route path="/groups" element={<GroupList />} />
         </Routes>
       </Router>
     </MessageProvider>

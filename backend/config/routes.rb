@@ -28,7 +28,7 @@ Rails.application.routes.draw do
   end
 
   resources :chats, only: [:index]
-  resources :groups, only: [:show] do
+  resources :groups, only: [:index, :show, :create] do
     member do
       post 'create_message'
       post 'clear_new_messages'
@@ -37,6 +37,7 @@ Rails.application.routes.draw do
     collection do
       get 'new_messages'
       post 'mark_as_read'
+      get :selectable_members
     end
 
     # メッセージに関連するルーティングを追加

@@ -1,64 +1,65 @@
 class User < ApplicationRecord
+  # プロフィール
   has_one :profile, class_name: 'Profile', dependent: :destroy
 
+  # Devise 認証
   include Devise::JWT::RevocationStrategies::JTIMatcher
   devise :database_authenticatable, :registerable,
          :recoverable, :rememberable, :validatable, :confirmable,
          :jwt_authenticatable, jwt_revocation_strategy: self
 
+  # メッセージ関連
   has_many :sent_messages, class_name: "DirectMessage", foreign_key: "sender_id"
   has_many :received_messages, class_name: "DirectMessage", foreign_key: "recipient_id"
-  # 自分が送信したフレンドリクエスト
+  has_many :sent_direct_messages, class_name: 'DirectMessage', foreign_key: 'sender_id'
+  has_many :received_direct_messages, class_name: 'DirectMessage', foreign_key: 'recipient_id'
+
+  # フレンドシップ関連
   has_many :friendships, foreign_key: :user_id, class_name: 'Friend'
-
-  # 他のユーザーが自分に送信したフレンドリクエスト
   has_many :inverse_friendships, foreign_key: :friend_id, class_name: 'Friend'
-
   has_many :friends, through: :friendships, source: :friend
+
+  # グループ関連
   has_many :group_memberships, class_name: "GroupMember"
   has_many :groups, through: :group_memberships
-  # 送信したダイレクトメッセージ
-  has_many :sent_direct_messages, class_name: 'DirectMessage', foreign_key: 'sender_id'
-  # 受信したダイレクトメッセージ
-  has_many :received_direct_messages, class_name: 'DirectMessage', foreign_key: 'recipient_id'
-  has_one :notification_setting, dependent: :destroy
+  has_many :owned_groups, class_name: 'Group', foreign_key: 'owner_id', dependent: :destroy
 
-  # 自分がブロックしているユーザーとの関連付け
+  # ブロック関係
   has_many :active_block_relationships, class_name: 'BlockRelationship',
-    foreign_key: 'blocker_id',
-    dependent: :destroy
+    foreign_key: 'blocker_id', dependent: :destroy
   has_many :blocking, through: :active_block_relationships, source: :blocked
 
-# 自分がブロックされているユーザーとの関連付け
   has_many :passive_block_relationships, class_name: 'BlockRelationship',
-    foreign_key: 'blocked_id',
-    dependent: :destroy
+    foreign_key: 'blocked_id', dependent: :destroy
   has_many :blockers, through: :passive_block_relationships, source: :blocker
 
+  # 通知設定
+  has_one :notification_setting, dependent: :destroy
 
-  after_create :create_notification_setting_with_default
-
+  # バリデーション
   validates :name, presence: true
   validates :email, presence: true, uniqueness: true
   validates :encrypted_password, presence: true
 
+  # ネストした属性を許可
   accepts_nested_attributes_for :profile
 
+  # コールバック
+  after_create :create_notification_setting_with_default
+
+  # アバター URL を取得
   def avatar_url
-    if profile&.avatar.present?
-      profile.avatar.url
-    else
-      nil
-    end
+    profile&.avatar&.url
   end
 
+  # 通知設定をデフォルトで作成
   def create_notification_setting_with_default
     create_notification_setting(enabled: true)
   end
 
   # ブロックするメソッド
   def block(other_user)
-      blocking << other_user unless blocking?(other_user)
+    blocking << other_user unless blocking?(other_user)
   end
 
   # ブロック解除するメソッド
@@ -69,5 +70,20 @@ class User < ApplicationRecord
   # すでにブロックしているかどうかを確認
   def blocking?(other_user)
     blocking.include?(other_user)
+  end
+
+  # グループメンバー選択用のメンバーリストを取得
+  def selectable_members
+    blocked_ids = blocking.pluck(:id)
+
+    User
+      .where.not(id: [id, *blocked_ids])
+      .select(:id, :name, :email)
+      .map { |user| user.attributes.merge(avatar_url: user.avatar_url) }
+  end
+
+  # グループに招待可能なフレンドリストを取得
+  def inviteable_friends
+    friends.where.not(id: blocking.pluck(:id))
   end
 end

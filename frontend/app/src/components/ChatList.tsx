@@ -270,6 +270,14 @@ const ChatList: React.FC = () => {
   return (
     <div className="chat-list-container">
       <h1>チャットリスト</h1>
+
+      {/* グループ作成リンクを追加 */}
+      <div className="create-group-link">
+        <Link to="/groups" className="create-group-button">
+          グループを作成する
+        </Link>
+      </div>
+
       <h2>グループチャット</h2>
       <ul className="chat-list">
         {groups.map((group) => (

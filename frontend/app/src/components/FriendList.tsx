@@ -43,14 +43,13 @@ const FriendList: React.FC = () => {
       setPendingRequestsSent(fetchedData.pending_requests_sent || []);
       setPendingRequestsReceived(fetchedData.pending_requests_received || []);
       setBlockedFriends(blockedData || []);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        console.error("Error fetching friends:", error.message);
-        setError(error.message);
-      } else {
-        console.error("Unknown error fetching friends");
-        setError("フレンド一覧の取得に失敗しました。");
-      }
+    } catch (error) {
+      console.error("フレンド一覧の取得に失敗しました:", error);
+      setError("フレンド一覧の取得に失敗しました。");
+      setConfirmedFriends([]);
+      setPendingRequestsSent([]);
+      setPendingRequestsReceived([]);
+      setBlockedFriends([]);
     } finally {
       setLoading(false);
     }

@@ -1,0 +1,142 @@
+/* コンテナスタイル */
+.group-list-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: #f0f2f5;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* グループ一覧セクション */
+.group-list-section {
+  padding: 20px;
+  background-color: #e9ecef;
+  border-radius: 10px;
+  margin-bottom: 30px;
+}
+
+/* 新規グループ作成セクション */
+.create-group-section {
+  padding: 20px;
+  background-color: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 見出しスタイル */
+.group-list-container h2,
+h3 {
+  text-align: center;
+  font-size: 24px;
+  color: #333;
+  margin-bottom: 20px;
+}
+
+/* グループ一覧のグリッドレイアウト */
+.group-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 20px;
+  list-style: none;
+  padding: 0;
+}
+
+/* グループアイテムのカードスタイル */
+.group-list-item {
+  background-color: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s, box-shadow 0.2s;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.group-list-item:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* グループリンク */
+.group-link {
+  text-decoration: none;
+  font-size: 18px;
+  color: #007bff;
+  margin-bottom: 10px;
+  transition: color 0.3s;
+}
+
+.group-link:hover {
+  color: #0056b3;
+}
+
+/* メンバー選択リスト */
+.user-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 10px;
+}
+
+/* メンバー選択アイテム */
+.user-list-item {
+  display: flex;
+  align-items: center;
+  background-color: #fff;
+  padding: 10px;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 新規グループ作成フォーム */
+.create-group-form {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.group-input {
+  padding: 12px;
+  font-size: 16px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 400px;
+}
+
+/* グループ作成ボタンのスタイル */
+.group-submit-button {
+  width: 100%;
+  max-width: 400px;
+  padding: 15px;
+  background-color: #007bff;
+  color: #fff;
+  font-size: 1.1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 6px rgba(0, 123, 255, 0.4);
+}
+
+.group-submit-button:hover {
+  background-color: #0056b3;
+  box-shadow: 0 6px 10px rgba(0, 86, 179, 0.5);
+}
+
+.group-submit-button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* エラーメッセージ */
+.group-error {
+  color: red;
+  text-align: center;
+  margin-top: 10px;
+}

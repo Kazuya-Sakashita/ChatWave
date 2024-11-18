@@ -1,0 +1,55 @@
+.member-selection-container {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 横並びのユーザーリスト */
+.user-list-horizontal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: center;
+}
+
+/* ユーザーカードのスタイル */
+.user-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 10px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  cursor: pointer;
+  width: 120px;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-card:hover {
+  background-color: #f0f0f0;
+}
+
+.user-card.selected {
+  background-color: #007bff;
+  color: #fff;
+  border: 2px solid #0056b3;
+}
+
+/* アバター画像のスタイル */
+.user-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-bottom: 10px;
+}
+
+/* ユーザー名のスタイル */
+.user-name {
+  font-size: 1rem;
+  font-weight: bold;
+  text-align: center;
+}
