@@ -78,33 +78,34 @@ const SendFriendRequest: React.FC = () => {
   }
 
   return (
-    <div>
+    <div className="friend-request-container">
       <h2>フレンド申請を送る</h2>
-      <div className="user-list">
-        {/* 承認待ちではないユーザーのみを表示 */}
-        {users
-          .filter((user) => !pendingRequests.includes(user.id)) // 承認待ちのユーザーを除外
-          .map((user) => (
-            <div
-              key={user.id}
-              className={`user-card ${
-                selectedUser === user.id ? "selected" : ""
-              }`} // カードが選択された状態を表示
-              onClick={() => setSelectedUser(user.id)} // ユーザーを選択
-            >
-              <img
-                src={user.avatar_url || "/default-avatar.png"} // アバター画像
-                alt={user.name}
-                className="user-avatar"
-              />
-              <p className="user-name">{user.name}</p>
-            </div>
-          ))}
+      <div className="user-list-container">
+        <div className="user-list">
+          {users
+            .filter((user) => !pendingRequests.includes(user.id))
+            .map((user) => (
+              <div
+                key={user.id}
+                className={`user-card ${
+                  selectedUser === user.id ? "selected" : ""
+                }`}
+                onClick={() => setSelectedUser(user.id)}
+              >
+                <img
+                  src={user.avatar_url || "/default-avatar.png"}
+                  alt={user.name}
+                  className="user-avatar"
+                />
+                <p className="user-name">{user.name}</p>
+              </div>
+            ))}
+        </div>
       </div>
       <button
         onClick={handleSendRequest}
         className="submit-button"
-        disabled={!selectedUser} // ユーザーが選択されていない場合はボタンを無効化
+        disabled={!selectedUser}
       >
         フレンド申請を送る
       </button>

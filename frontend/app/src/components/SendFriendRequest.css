@@ -1,115 +1,83 @@
-/* 全体コンテナのデザイン */
-.friend-request-form-container {
+/* 全体コンテナのスタイル */
+.friend-request-container {
   width: 100%;
-  max-width: 400px;
+  max-width: 600px;
   margin: 0 auto;
   padding: 20px;
-  background-color: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-color: #f0f4ff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* フレンド申請フォームのヘッダー */
-.friend-request-form h2 {
+/* ヘッダーのスタイル */
+.friend-request-container h2 {
   text-align: center;
   margin-bottom: 20px;
-  font-size: 1.5rem;
-  color: #333;
-  font-family: "Arial", sans-serif; /* フォントを少しモダンに変更 */
-}
-
-/* フォームグループ（入力フィールド）のスタイル */
-.form-group {
-  margin-bottom: 15px;
-}
-
-/* ラベルのデザイン */
-.form-group label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #555;
-}
-
-/* 入力フィールドのデザイン */
-.form-group input {
-  width: 100%;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  font-size: 1rem;
-  box-sizing: border-box; /* ボックスのサイズが崩れないように */
+  font-size: 1.8rem;
+  color: #2c3e50;
+  font-family: "Arial", sans-serif;
 }
 
 /* フレンド申請ボタンのスタイル */
 .submit-button {
   width: 100%;
-  padding: 12px;
-  background-color: #007bff;
+  padding: 14px;
+  background-color: #3498db;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   cursor: pointer;
-  font-size: 1.1rem;
-  transition: background-color 0.3s ease;
+  font-size: 1.2rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
   margin-top: 20px;
 }
 
 .submit-button:hover {
-  background-color: #0056b3;
+  background-color: #2980b9;
+  transform: scale(1.05);
 }
 
 .submit-button:disabled {
-  background-color: #cccccc;
+  background-color: #bdc3c7;
   cursor: not-allowed;
 }
 
-/* エラーメッセージと成功メッセージのスタイル */
-.error-message,
-.success-message {
+/* エラーメッセージのスタイル */
+.error-message {
+  color: #e74c3c;
   text-align: center;
   margin-top: 10px;
-  font-size: 14px;
-}
-
-.error-message {
-  color: #ff3333;
-}
-
-.success-message {
-  color: #28a745;
 }
 
 /* ユーザーリストのスタイル */
 .user-list {
   display: flex;
   flex-wrap: wrap;
-  justify-content: center; /* 中央揃え */
-  gap: 20px; /* カード間のスペース */
-  margin: 20px 0; /* 上下の余白 */
+  justify-content: center;
+  gap: 16px;
+  margin: 20px 0;
 }
 
 /* ユーザーカードのスタイル */
 .user-card {
-  background-color: #fff;
-  border-radius: 10px;
-  padding: 15px;
+  background-color: #ffffff;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   cursor: pointer;
   transition: transform 0.3s ease, background-color 0.3s ease;
-  width: 150px;
-  margin: 10px;
+  width: 140px;
 }
 
 .user-card:hover {
-  transform: scale(1.05); /* ホバー時にカードを拡大 */
-  background-color: #f0f8ff;
+  transform: translateY(-5px);
+  background-color: #ecf0f1;
 }
 
 .user-card.selected {
-  border: 2px solid #007bff;
-  background-color: #e6f0ff;
+  border: 2px solid #3498db;
+  background-color: #eaf2f8;
 }
 
 /* アバター画像のスタイル */
@@ -118,31 +86,41 @@
   height: 80px;
   border-radius: 50%;
   object-fit: cover;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
   transition: transform 0.3s ease;
 }
 
 .user-avatar:hover {
-  transform: rotate(360deg); /* アバターが回転するアニメーション */
+  transform: rotate(10deg);
 }
 
 /* ユーザー名のスタイル */
 .user-name {
   font-size: 1.1rem;
-  font-weight: bold;
-  color: #333;
+  font-weight: 600;
+  color: #34495e;
   margin-top: 8px;
 }
 
-/* 承認待ちのユーザーがいない場合のメッセージコンテナ */
-.no-users-container {
-  text-align: center;
-  margin-top: 50px;
-}
+/* レスポンシブデザイン */
+@media (max-width: 600px) {
+  .user-card {
+    width: 120px;
+  }
 
-.no-users-container h2 {
-  font-size: 1.5rem;
-  color: #555;
+  .user-avatar {
+    width: 70px;
+    height: 70px;
+  }
+
+  .submit-button {
+    font-size: 1rem;
+    padding: 12px;
+  }
+
+  .friend-request-container h2 {
+    font-size: 1.5rem;
+  }
 }
 
 /* ホームに戻るリンクボタンのスタイル */
@@ -150,39 +128,24 @@
   display: inline-block;
   margin-top: 20px;
   padding: 12px 24px;
-  background-color: #007bff;
+  background-color: #3498db;
   color: white;
   text-decoration: none;
-  border-radius: 5px;
+  border-radius: 8px;
   transition: background-color 0.3s ease;
 }
 
 .back-home-link:hover {
-  background-color: #0056b3;
+  background-color: #2980b9;
 }
 
-/* レスポンシブデザインを追加 */
-@media (max-width: 600px) {
-  .user-card {
-    width: 100px;
-  }
-
-  .user-avatar {
-    width: 60px;
-    height: 60px;
-  }
-
-  .submit-button {
-    font-size: 1rem;
-    padding: 10px;
-  }
-}
-
-/* ヘッダーのスタイル */
-h2 {
+/* 空のユーザーリストメッセージ */
+.no-users-container {
   text-align: center;
-  font-size: 24px;
-  color: #333;
-  margin-bottom: 20px;
-  font-family: "Helvetica", sans-serif;
+  margin-top: 40px;
+}
+
+.no-users-container h2 {
+  font-size: 1.4rem;
+  color: #7f8c8d;
 }
