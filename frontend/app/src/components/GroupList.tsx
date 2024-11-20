@@ -16,7 +16,7 @@ const GroupList: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [resetSelection, setResetSelection] = useState<boolean>(false);
 
-  // グループ一覧と選択可能なメンバー一覧の取得
+  // Fetch groups and selectable members
   useEffect(() => {
     const fetchGroups = async () => {
       try {
@@ -24,8 +24,7 @@ const GroupList: React.FC = () => {
           method: "GET",
           credentials: "include",
         });
-        if (!response.ok) throw new Error("グループ一覧の取得に失敗しました");
-
+        if (!response.ok) throw new Error("Failed to fetch group list.");
         const data = await response.json();
         setGroups(data.groups || []);
       } catch (error) {
@@ -43,9 +42,7 @@ const GroupList: React.FC = () => {
             credentials: "include",
           }
         );
-
-        if (!response.ok) throw new Error("メンバー一覧の取得に失敗しました");
-
+        if (!response.ok) throw new Error("Failed to fetch member list.");
         const data: SelectableMembersResponse = await response.json();
         setSelectableMembers(data.members || []);
       } catch (error) {
@@ -58,7 +55,7 @@ const GroupList: React.FC = () => {
     fetchSelectableMembers();
   }, []);
 
-  // グループ作成関数
+  // Handle group creation
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newGroupName.trim() === "") {
@@ -93,10 +90,10 @@ const GroupList: React.FC = () => {
       setGroups((prevGroups) => [...prevGroups, data]);
       setNewGroupName("");
       setSelectedMembers([]);
-      setResetSelection((prev) => !prev); // リセットフラグをトグル
+      setResetSelection((prev) => !prev);
       alert("グループが正常に作成されました！");
     } catch (error) {
-      console.error("グループ作成に失敗しました:", error);
+      console.error("Failed to create group:", error);
       setError("グループ作成に失敗しました。サーバーに接続できませんでした。");
     } finally {
       setLoading(false);
@@ -104,24 +101,26 @@ const GroupList: React.FC = () => {
   };
 
   return (
-    <div className="group-list-container">
+    <div className="group-management-container">
+      {/* Group List Section */}
       <div className="group-list-section">
-        <h2>あなたが参加しているグループ一覧</h2>
+        <h2>グループ一覧</h2>
         <ul className="group-list">
           {groups.length > 0 ? (
             groups.map((group) => (
-              <li key={group.id} className="group-list-item">
+              <li key={group.id} className="group-card">
                 <a href={`/groups/${group.id}`} className="group-link">
                   {group.name}
                 </a>
               </li>
             ))
           ) : (
-            <p>参加しているグループがありません。</p>
+            <p className="no-groups">参加しているグループがありません。</p>
           )}
         </ul>
       </div>
 
+      {/* Create Group Section */}
       <div className="create-group-section">
         <h2>新しいグループを作成</h2>
         <form onSubmit={handleCreateGroup} className="create-group-form">
@@ -132,7 +131,6 @@ const GroupList: React.FC = () => {
             onChange={(e) => setNewGroupName(e.target.value)}
             className="group-input"
           />
-
           <h4>メンバーを選択</h4>
           <MemberSelection
             users={selectableMembers}
@@ -140,11 +138,14 @@ const GroupList: React.FC = () => {
             onSelectionChange={setSelectedMembers}
             resetSelection={resetSelection}
           />
-
           <button
             type="submit"
             className="group-submit-button"
-            disabled={loading}
+            disabled={
+              loading ||
+              newGroupName.trim().length === 0 ||
+              selectedMembers.length === 0
+            }
           >
             {loading ? "作成中..." : "グループ作成"}
           </button>
