@@ -74,7 +74,7 @@
 
 /* グループ作成セクション */
 .create-group-section {
-  background-color: #fff; /* 背景を白に設定 */
+  background-color: #f0f4ff; /* 背景を白に設定 */
   padding: 20px; /* コンテンツ周りに20pxの余白 */
   border-radius: 8px; /* 角を8px丸める */
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); /* 軽い影を付けて浮き上がらせる */
