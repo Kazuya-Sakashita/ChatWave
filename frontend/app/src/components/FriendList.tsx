@@ -225,6 +225,37 @@ const FriendList: React.FC = () => {
         )}
       </ul>
 
+      <h3 className="friend-list-subtitle">受け取ったフレンド申請</h3>
+      <ul className="friend-list">
+        {pendingRequestsReceived.length > 0 ? (
+          pendingRequestsReceived.map((request) => (
+            <li key={`received-${request.id}`} className="friend-list-item">
+              <div className="friend-info">
+                <p className="friend-name">名前: {request.name}</p>
+              </div>
+              <div className="friend-actions">
+                <button
+                  className="friend-button accept"
+                  onClick={() => handleAccept(request.id)}
+                >
+                  承認
+                </button>
+                <button
+                  className="friend-button reject"
+                  onClick={() => handleReject(request.id)}
+                >
+                  拒否
+                </button>
+              </div>
+            </li>
+          ))
+        ) : (
+          <p className="no-friends-message">
+            受け取ったフレンド申請がありません。
+          </p>
+        )}
+      </ul>
+
       <h3 className="friend-list-subtitle">ブロックしたフレンド</h3>
       <ul className="friend-list">
         {blockedFriends.length > 0 ? (
