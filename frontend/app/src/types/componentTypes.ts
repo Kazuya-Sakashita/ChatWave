@@ -133,6 +133,7 @@ export interface Friend {
   confirmed: boolean;
   is_sender?: boolean;
   avatar_url?: string;
+  isMutual: boolean;
 }
 
 export interface FriendsResponse {
