@@ -6,26 +6,41 @@ class FriendsController < ApplicationController
 
   # フレンドリストとブロックリストを返すアクション
   def index
-    # TODO: 承認済みフレンドをフォロー、フォロワーに分ける（現状：相互になると2重表示となる）
-    # TODO: フォロー、フォロワーに変更後ブロックのロジックを変更する
+    # TODO: フォロー、フォロワーに分けたフレンド管理に対応
+    # 承認済みのフレンドを取得し、フォローとフォロワーに分ける
+    following_friends = Friend.where(user_id: current_user.id, state: 'accepted').distinct
+    follower_friends = Friend.where(friend_id: current_user.id, state: 'accepted').distinct
 
-    # 承認済みフレンドの取得
-    confirmed_friends = Friend.where("(user_id = ? OR friend_id = ?) AND state = ?", current_user.id, current_user.id, 'accepted').distinct
+    # フォローとフォロワーを統合し、一意のリストを生成
+    confirmed_friends = (following_friends + follower_friends).map do |friend|
+      friend_user = friend.user_id == current_user.id ? friend.friend : friend.user
+
+      {
+        id: friend_user.id,
+        name: friend_user.name,
+        email: friend_user.email,
+        avatar_url: friend_user.avatar_url,
+        is_sender: friend.user_id == current_user.id,
+        # 双方向の関係を確認して is_mutual を設定
+        is_mutual: following_friends.exists?(friend_id: friend_user.id) && follower_friends.exists?(user_id: friend_user.id)
+      }
+    end.uniq { |f| f[:id] }
 
     # ペンディング状態のフレンド申請を取得
-    pending_requests_sent = Friend.where(user_id: current_user.id, state: 'pending') # 自分が送信したフレンド申請
-    pending_requests_received = Friend.where(friend_id: current_user.id, state: 'pending') # 自分が受け取ったフレンド申請
+    pending_requests_sent = Friend.where(user_id: current_user.id, state: 'pending')
+    pending_requests_received = Friend.where(friend_id: current_user.id, state: 'pending')
 
     # ブロックしたフレンドの取得
     blocked_friends = current_user.blocking
 
     render json: {
-      confirmed_friends: confirmed_friends.map { |friend| format_friend(friend) },
+      confirmed_friends: confirmed_friends,
       pending_requests_sent: pending_requests_sent.map { |friend| format_pending_request(friend, 'sent') },
       pending_requests_received: pending_requests_received.map { |friend| format_pending_request(friend, 'received') },
       blocked_friends: blocked_friends.map { |user| format_blocked_friend(user) }
     }
   end
+
 
   # フレンドリクエスト送信
   def create
@@ -167,6 +182,17 @@ class FriendsController < ApplicationController
     }
   end
 
+  # 承認済みフレンドのフォーマット
+  def format_confirmed_friend(friend)
+    target_user = friend.user_id == current_user.id ? friend.friend : friend.user
+    {
+      id: target_user.id,
+      name: target_user.name,
+      email: target_user.email,
+      is_mutual: mutual_friend?(target_user) # 相互フレンドかどうか
+    }
+  end
+
   def format_pending_request(friend, type)
     other_user = friend.user_id == current_user.id ? friend.friend : friend.user
     {
@@ -185,5 +211,10 @@ class FriendsController < ApplicationController
       email: user.email,
       avatar_url: user.avatar_url
     }
+  end
+
+  # 相互フレンドかどうかを判定する
+  def mutual_friend?(other_user)
+    friends.exists?(id: other_user.id) && other_user.friends.exists?(id: id)
   end
 end

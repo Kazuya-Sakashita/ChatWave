@@ -86,4 +86,13 @@ class User < ApplicationRecord
   def inviteable_friends
     friends.where.not(id: blocking.pluck(:id))
   end
+
+  # 承認済みフレンドの一覧を取得
+  def confirmed_friends
+    friends.map do |friend|
+      friend.as_json(only: [:id, :name, :email]).merge(
+        isMutual: friend.friends.include?(self) # 相互フレンドかを確認
+      )
+    end
+  end
 end

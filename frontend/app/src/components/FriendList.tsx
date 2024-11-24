@@ -36,10 +36,17 @@ const FriendList: React.FC = () => {
       const fetchedData = await getFriends();
       const blockedData = await getBlockedFriends();
 
-      console.log("Fetched Friends Data:", fetchedData);
-      console.log("Fetched Blocked Friends Data:", blockedData);
+      // `is_mutual` を `isMutual` に変換
+      const mappedConfirmedFriends = fetchedData.confirmed_friends.map(
+        (friend: any) => ({
+          ...friend,
+          isMutual: friend.is_mutual, // アンダースコア記法からキャメルケースへ変換
+        })
+      );
 
-      setConfirmedFriends(fetchedData.confirmed_friends || []);
+      console.log("Mapped Confirmed Friends Data:", mappedConfirmedFriends);
+
+      setConfirmedFriends(mappedConfirmedFriends || []);
       setPendingRequestsSent(fetchedData.pending_requests_sent || []);
       setPendingRequestsReceived(fetchedData.pending_requests_received || []);
       setBlockedFriends(blockedData || []);
@@ -154,29 +161,40 @@ const FriendList: React.FC = () => {
       <h3 className="friend-list-subtitle">承認済みのフレンド</h3>
       <ul className="friend-list">
         {uniqueConfirmedFriends.length > 0 ? (
-          uniqueConfirmedFriends.map((friend) => (
-            <li key={`confirmed-${friend.id}`} className="friend-list-item">
-              <div className="friend-info">
-                <p className="friend-name">名前: {friend.name}</p>
-                <p className="friend-email">Email: {friend.email}</p>
-              </div>
-              {/* TODO ダイレクトメッセージ表示に不具合があるため、修正必要 */}
-              <button
-                className="friend-button message"
-                onClick={() => handleSendMessage(friend.id)}
-              >
-                メッセージを送る
-              </button>
-              <div className="friend-actions">
+          uniqueConfirmedFriends.map((friend) => {
+            // isMutual の値をログに出力
+            console.log(
+              `Friend ID: ${friend.id}, Name: ${friend.name}, isMutual: ${friend.isMutual}`
+            );
+
+            return (
+              <li key={`confirmed-${friend.id}`} className="friend-list-item">
+                <div className="friend-info">
+                  <p className="friend-name">
+                    名前: {friend.name}
+                    {friend.isMutual && (
+                      <span className="mutual-friend-badge">相互フレンド</span>
+                    )}
+                  </p>
+                  <p className="friend-email">Email: {friend.email}</p>
+                </div>
                 <button
-                  className="friend-button block"
-                  onClick={() => handleBlock(friend.id)}
+                  className="friend-button message"
+                  onClick={() => handleSendMessage(friend.id)}
                 >
-                  ブロック
+                  メッセージを送る
                 </button>
-              </div>
-            </li>
-          ))
+                <div className="friend-actions">
+                  <button
+                    className="friend-button block"
+                    onClick={() => handleBlock(friend.id)}
+                  >
+                    ブロック
+                  </button>
+                </div>
+              </li>
+            );
+          })
         ) : (
           <p className="no-friends-message">承認済みのフレンドがいません。</p>
         )}
@@ -203,37 +221,6 @@ const FriendList: React.FC = () => {
         ) : (
           <p className="no-friends-message">
             送信したフレンド申請がありません。
-          </p>
-        )}
-      </ul>
-
-      <h3 className="friend-list-subtitle">受け取ったフレンド申請</h3>
-      <ul className="friend-list">
-        {pendingRequestsReceived.length > 0 ? (
-          pendingRequestsReceived.map((request) => (
-            <li key={`received-${request.id}`} className="friend-list-item">
-              <div className="friend-info">
-                <p className="friend-name">名前: {request.name}</p>
-              </div>
-              <div className="friend-actions">
-                <button
-                  className="friend-button accept"
-                  onClick={() => handleAccept(request.id)}
-                >
-                  承認
-                </button>
-                <button
-                  className="friend-button reject"
-                  onClick={() => handleReject(request.id)}
-                >
-                  拒否
-                </button>
-              </div>
-            </li>
-          ))
-        ) : (
-          <p className="no-friends-message">
-            受け取ったフレンド申請がありません。
           </p>
         )}
       </ul>
