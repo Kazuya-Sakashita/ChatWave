@@ -4,40 +4,15 @@ class FriendsController < ApplicationController
   before_action :set_user_to_block_or_unblock, only: [:block, :unblock]
 
 
-  # フレンドリストとブロックリストを返すアクション
   def index
-    # TODO: フォロー、フォロワーに分けたフレンド管理に対応
-    # 承認済みのフレンドを取得し、フォローとフォロワーに分ける
-    following_friends = Friend.where(user_id: current_user.id, state: 'accepted').distinct
-    follower_friends = Friend.where(friend_id: current_user.id, state: 'accepted').distinct
-
-    # フォローとフォロワーを統合し、一意のリストを生成
-    confirmed_friends = (following_friends + follower_friends).map do |friend|
-      friend_user = friend.user_id == current_user.id ? friend.friend : friend.user
-
-      {
-        id: friend_user.id,
-        name: friend_user.name,
-        email: friend_user.email,
-        avatar_url: friend_user.avatar_url,
-        is_sender: friend.user_id == current_user.id,
-        # 双方向の関係を確認して is_mutual を設定
-        is_mutual: following_friends.exists?(friend_id: friend_user.id) && follower_friends.exists?(user_id: friend_user.id)
-      }
-    end.uniq { |f| f[:id] }
-
-    # ペンディング状態のフレンド申請を取得
-    pending_requests_sent = Friend.where(user_id: current_user.id, state: 'pending')
-    pending_requests_received = Friend.where(friend_id: current_user.id, state: 'pending')
-
-    # ブロックしたフレンドの取得
-    blocked_friends = current_user.blocking
+    service = FriendsService.new(current_user)
+    friend_lists = service.fetch_friend_lists
 
     render json: {
-      confirmed_friends: confirmed_friends,
-      pending_requests_sent: pending_requests_sent.map { |friend| format_pending_request(friend, 'sent') },
-      pending_requests_received: pending_requests_received.map { |friend| format_pending_request(friend, 'received') },
-      blocked_friends: blocked_friends.map { |user| format_blocked_friend(user) }
+      confirmed_friends: friend_lists[:confirmed_friends],
+      pending_requests_sent: friend_lists[:pending_requests_sent].map { |friend| format_pending_request(friend, 'sent') },
+      pending_requests_received: friend_lists[:pending_requests_received].map { |friend| format_pending_request(friend, 'received') },
+      blocked_friends: friend_lists[:blocked_friends].map { |user| format_blocked_friend(user) }
     }
   end
 
@@ -56,9 +31,9 @@ class FriendsController < ApplicationController
       new_request = Friend.new(user_id: current_user.id, friend_id: friend.id, state: 'pending')
 
       if new_request.save
-        render json: { message: 'フレンド申請が送信されました。' }, status: :created
-      else
-        render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
+      render json: { message: 'フレンド申請が送信されました。' }, status: :created
+    else
+      render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
       end
     end
   end
