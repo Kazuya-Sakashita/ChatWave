@@ -32,7 +32,7 @@ class FriendsController < ApplicationController
 
       if new_request.save
       render json: { message: 'フレンド申請が送信されました。' }, status: :created
-    else
+      else
       render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
       end
     end
