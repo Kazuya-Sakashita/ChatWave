@@ -19,24 +19,16 @@ class FriendsController < ApplicationController
 
   # フレンドリクエスト送信
   def create
-    friend = User.find(params[:friend_id])
+    service = FriendsService.new(current_user)
+    result = service.create_friend_request(params[:friend_id])
 
-    # リジェクトされたリクエストがあるか確認
-    existing_request = Friend.find_by(user_id: current_user.id, friend_id: friend.id, state: 'rejected')
-
-    if existing_request
-      existing_request.update(state: 'pending')
-      render json: { message: 'フレンド申請が再度送信されました。' }, status: :ok
+    if result[:success]
+      render json: { message: result[:message] }, status: :created
     else
-      new_request = Friend.new(user_id: current_user.id, friend_id: friend.id, state: 'pending')
-
-      if new_request.save
-      render json: { message: 'フレンド申請が送信されました。' }, status: :created
-      else
-      render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
-      end
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
+
   # フレンド申請の承認・拒否・キャンセル時にリアルタイム通知を送信
   def update
     case params[:action_type]
