@@ -31,32 +31,16 @@ class FriendsController < ApplicationController
 
   # フレンド申請の承認・拒否・キャンセル時にリアルタイム通知を送信
   def update
-    case params[:action_type]
-    when 'accept'
-      if @friend.accept!
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'accepted')
-        render json: { message: 'フレンド申請を承認しました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請の承認に失敗しました。' }, status: :unprocessable_entity
-      end
-    when 'reject'
-      if @friend.reject!
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'rejected')
-        render json: { message: 'フレンド申請を拒否しました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請の拒否に失敗しました。' }, status: :unprocessable_entity
-      end
-    when 'cancel'
-      if @friend.destroy
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'cancelled')
-        render json: { message: 'フレンド申請をキャンセルしました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請のキャンセルに失敗しました。' }, status: :unprocessable_entity
-      end
+    service = FriendsService.new(current_user)
+    result = service.update_friend_request(@friend, params[:action_type])
+
+    if result[:success]
+      render json: { message: result[:message] }, status: :ok
     else
-      render json: { error: '無効なアクションです。' }, status: :unprocessable_entity
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
+
 
   # ブロック処理
   def block
