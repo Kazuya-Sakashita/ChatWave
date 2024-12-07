@@ -1,115 +1,68 @@
 class FriendsController < ApplicationController
+  include FriendFormatHelper
+
   before_action :authenticate_user!
   before_action :set_friend, only: [:update, :cancel]
   before_action :set_user_to_block_or_unblock, only: [:block, :unblock]
 
-
-  # フレンドリストとブロックリストを返すアクション
   def index
-    # TODO: フォロー、フォロワーに分けたフレンド管理に対応
-    # 承認済みのフレンドを取得し、フォローとフォロワーに分ける
-    following_friends = Friend.where(user_id: current_user.id, state: 'accepted').distinct
-    follower_friends = Friend.where(friend_id: current_user.id, state: 'accepted').distinct
+    service = FriendsService.new(current_user)
+    friend_lists = service.fetch_friend_lists
 
-    # フォローとフォロワーを統合し、一意のリストを生成
-    confirmed_friends = (following_friends + follower_friends).map do |friend|
-      friend_user = friend.user_id == current_user.id ? friend.friend : friend.user
-
-      {
-        id: friend_user.id,
-        name: friend_user.name,
-        email: friend_user.email,
-        avatar_url: friend_user.avatar_url,
-        is_sender: friend.user_id == current_user.id,
-        # 双方向の関係を確認して is_mutual を設定
-        is_mutual: following_friends.exists?(friend_id: friend_user.id) && follower_friends.exists?(user_id: friend_user.id)
-      }
-    end.uniq { |f| f[:id] }
-
-    # ペンディング状態のフレンド申請を取得
-    pending_requests_sent = Friend.where(user_id: current_user.id, state: 'pending')
-    pending_requests_received = Friend.where(friend_id: current_user.id, state: 'pending')
-
-    # ブロックしたフレンドの取得
-    blocked_friends = current_user.blocking
-
-    render json: {
-      confirmed_friends: confirmed_friends,
-      pending_requests_sent: pending_requests_sent.map { |friend| format_pending_request(friend, 'sent') },
-      pending_requests_received: pending_requests_received.map { |friend| format_pending_request(friend, 'received') },
-      blocked_friends: blocked_friends.map { |user| format_blocked_friend(user) }
-    }
+render json: {
+  confirmed_friends: friend_lists[:confirmed_friends],
+  pending_requests_sent: friend_lists[:pending_requests_sent].map { |friend| format_pending_request(friend, current_user, 'sent') },
+  pending_requests_received: friend_lists[:pending_requests_received].map { |friend| format_pending_request(friend, current_user, 'received') },
+  blocked_friends: friend_lists[:blocked_friends].map { |user| format_blocked_friend(user) }
+}
   end
-
 
   # フレンドリクエスト送信
   def create
-    friend = User.find(params[:friend_id])
+    service = FriendsService.new(current_user)
+    result = service.create_friend_request(params[:friend_id])
 
-    # リジェクトされたリクエストがあるか確認
-    existing_request = Friend.find_by(user_id: current_user.id, friend_id: friend.id, state: 'rejected')
-
-    if existing_request
-      existing_request.update(state: 'pending')
-      render json: { message: 'フレンド申請が再度送信されました。' }, status: :ok
+    if result[:success]
+      render json: { message: result[:message] }, status: :created
     else
-      new_request = Friend.new(user_id: current_user.id, friend_id: friend.id, state: 'pending')
-
-      if new_request.save
-        render json: { message: 'フレンド申請が送信されました。' }, status: :created
-      else
-        render json: { error: 'フレンド申請の送信に失敗しました。' }, status: :unprocessable_entity
-      end
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
+
   # フレンド申請の承認・拒否・キャンセル時にリアルタイム通知を送信
   def update
-    case params[:action_type]
-    when 'accept'
-      if @friend.accept!
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'accepted')
-        render json: { message: 'フレンド申請を承認しました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請の承認に失敗しました。' }, status: :unprocessable_entity
-      end
-    when 'reject'
-      if @friend.reject!
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'rejected')
-        render json: { message: 'フレンド申請を拒否しました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請の拒否に失敗しました。' }, status: :unprocessable_entity
-      end
-    when 'cancel'
-      if @friend.destroy
-        broadcast_friend_update(@friend.user_id, @friend.friend_id, 'cancelled')
-        render json: { message: 'フレンド申請をキャンセルしました。' }, status: :ok
-      else
-        render json: { error: 'フレンド申請のキャンセルに失敗しました。' }, status: :unprocessable_entity
-      end
+    service = FriendsService.new(current_user)
+    result = service.update_friend_request(@friend, params[:action_type])
+
+    if result[:success]
+      render json: { message: result[:message] }, status: :ok
     else
-      render json: { error: '無効なアクションです。' }, status: :unprocessable_entity
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
+
 
   # ブロック処理
   def block
-    if current_user.block(@user_to_block_or_unblock)
-      broadcast_block_update(current_user.id, @user_to_block_or_unblock.id, 'blocked')
-      render json: { message: 'ユーザーをブロックしました。' }, status: :ok
+    service = FriendsService.new(current_user)
+    result = service.block_user(@user_to_block_or_unblock)
+
+    if result[:success]
+      render json: { message: result[:message] }, status: :ok
     else
-      render json: { error: 'ユーザーのブロックに失敗しました。' }, status: :unprocessable_entity
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
 
   # ブロック解除処理
   def unblock
-    user_to_unblock = User.find(params[:id])
+    service = FriendsService.new(current_user)
+    result = service.unblock_user(@user_to_block_or_unblock)
 
-    if current_user.unblock(user_to_unblock)
-      broadcast_block_update(current_user.id, user_to_unblock.id, 'unblocked')
-      render json: { message: 'ユーザーのブロックを解除しました。' }, status: :ok
+    if result[:success]
+      render json: { message: result[:message] }, status: :ok
     else
-      render json: { error: 'ブロック解除に失敗しました。' }, status: :unprocessable_entity
+      render json: { error: result[:error] }, status: :unprocessable_entity
     end
   end
 
@@ -171,17 +124,6 @@ class FriendsController < ApplicationController
     )
   end
 
-  def format_friend(friend)
-    other_user = friend.user_id == current_user.id ? friend.friend : friend.user
-    {
-      id: other_user.id,
-      name: other_user.name,
-      email: other_user.email,
-      avatar_url: other_user.avatar_url,
-      is_sender: friend.user_id == current_user.id
-    }
-  end
-
   # 承認済みフレンドのフォーマット
   def format_confirmed_friend(friend)
     target_user = friend.user_id == current_user.id ? friend.friend : friend.user
@@ -190,26 +132,6 @@ class FriendsController < ApplicationController
       name: target_user.name,
       email: target_user.email,
       is_mutual: mutual_friend?(target_user) # 相互フレンドかどうか
-    }
-  end
-
-  def format_pending_request(friend, type)
-    other_user = friend.user_id == current_user.id ? friend.friend : friend.user
-    {
-      id: friend.id,
-      name: other_user.name,
-      email: other_user.email,
-      avatar_url: other_user.avatar_url,
-      status: type
-    }
-  end
-
-  def format_blocked_friend(user)
-    {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      avatar_url: user.avatar_url
     }
   end
 
